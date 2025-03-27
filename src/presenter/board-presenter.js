@@ -1,29 +1,31 @@
-import BoardView from '../view/board-view.js';
-import SortView from '../view/sort-view.js';
-import TaskListView from '../view/task-list-view.js';
-import TaskView from '../view/task-view.js';
-import TaskEditView from '../view/task-edit-view.js';
-import LoadMoreButtonView from '../view/load-more-button-view.js';
 import {render} from '../render.js';
+import PointView from '../view/point-view.js';
+import PointEditView from '../view/point-edit-view.js';
+import SortView from '../view/sort-view.js';
 
 export default class BoardPresenter {
-  boardComponent = new BoardView();
-  taskListComponent = new TaskListView();
+  #boardContainer = null;
+  #pointsModel = null;
 
-  constructor({boardContainer}) {
-    this.boardContainer = boardContainer;
+  constructor({boardContainer, pointsModel}) {
+    this.#boardContainer = boardContainer;
+    this.#pointsModel = pointsModel;
   }
 
   init() {
-    render(this.boardComponent, this.boardContainer);
-    render(new SortView(), this.boardComponent.getElement());
-    render(this.taskListComponent, this.boardComponent.getElement());
-    render(new TaskEditView(), this.taskListComponent.getElement());
+    const points = this.#pointsModel.points;
+    render(new SortView(), this.#boardContainer);
 
-    for (let i = 0; i < 3; i++) {
-      render(new TaskView(), this.taskListComponent.getElement());
+    const tripEventsList = document.createElement('ul');
+    tripEventsList.classList.add('trip-events__list');
+    this.#boardContainer.append(tripEventsList);
+
+    // Форма редактирования - первый элемент списка
+    render(new PointEditView(points[0]), tripEventsList);
+
+    // Отрисовка остальных точек маршрута
+    for (let i = 1; i < points.length; i++) {
+      render(new PointView(points[i]), tripEventsList);
     }
-
-    render(new LoadMoreButtonView(), this.boardComponent.getElement());
   }
 }

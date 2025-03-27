@@ -1,83 +1,33 @@
-import {createElement} from '../render.js';
+import AbstractView from './abstract-view.js';
 
-function createFilterTemplate() {
-  return (
-    `<section class="main__filter filter container">
-       <input
-         type="radio"
-         id="filter__all"
-         class="filter__input visually-hidden"
-         name="filter"
-         checked
-       />
-       <label for="filter__all" class="filter__label">
-         All <span class="filter__all-count">13</span></label
-       >
-       <input
-         type="radio"
-         id="filter__overdue"
-         class="filter__input visually-hidden"
-         name="filter"
-         disabled
-       />
-       <label for="filter__overdue" class="filter__label"
-         >Overdue <span class="filter__overdue-count">0</span></label
-       >
-       <input
-         type="radio"
-         id="filter__today"
-         class="filter__input visually-hidden"
-         name="filter"
-         disabled
-       />
-       <label for="filter__today" class="filter__label"
-         >Today <span class="filter__today-count">0</span></label
-       >
-       <input
-         type="radio"
-         id="filter__favorites"
-         class="filter__input visually-hidden"
-         name="filter"
-       />
-       <label for="filter__favorites" class="filter__label"
-         >Favorites <span class="filter__favorites-count">1</span></label
-       >
-       <input
-         type="radio"
-         id="filter__repeating"
-         class="filter__input visually-hidden"
-         name="filter"
-       />
-       <label for="filter__repeating" class="filter__label"
-         >Repeating <span class="filter__repeating-count">1</span></label
-       >
-       <input
-         type="radio"
-         id="filter__archive"
-         class="filter__input visually-hidden"
-         name="filter"
-       />
-       <label for="filter__archive" class="filter__label"
-         >Archive <span class="filter__archive-count">115</span></label
-       >
-     </section>`
-  );
-}
+const createFilterTemplate = () => (
+  `<form class="trip-filters" action="#" method="get">
+    <div class="trip-filters__filter">
+      <input id="filter-everything" class="trip-filters__filter-input  visually-hidden" type="radio" name="trip-filter" value="everything" checked>
+      <label class="trip-filters__filter-label" for="filter-everything">Everything</label>
+    </div>
 
-export default class FilterView {
-  getTemplate() {
+    <div class="trip-filters__filter">
+      <input id="filter-future" class="trip-filters__filter-input  visually-hidden" type="radio" name="trip-filter" value="future">
+      <label class="trip-filters__filter-label" for="filter-future">Future</label>
+    </div>
+
+    <div class="trip-filters__filter">
+      <input id="filter-present" class="trip-filters__filter-input  visually-hidden" type="radio" name="trip-filter" value="present">
+      <label class="trip-filters__filter-label" for="filter-present">Present</label>
+    </div>
+
+    <div class="trip-filters__filter">
+      <input id="filter-past" class="trip-filters__filter-input  visually-hidden" type="radio" name="trip-filter" value="past">
+      <label class="trip-filters__filter-label" for="filter-past">Past</label>
+    </div>
+
+    <button class="visually-hidden" type="submit">Accept filter</button>
+  </form>`
+);
+
+export default class FilterView extends AbstractView {
+  get template() {
     return createFilterTemplate();
-  }
-
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
-    }
-
-    return this.element;
-  }
-
-  removeElement() {
-    this.element = null;
   }
 }
