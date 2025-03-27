@@ -13,14 +13,19 @@ export default class BoardPresenter {
   }
 
   init() {
+    const points = this.#pointsModel.points;
     render(new SortView(), this.#boardContainer);
 
-    // Форма редактирования - первый элемент списка
-    render(new PointEditView(), this.#boardContainer);
+    const tripEventsList = document.createElement('ul');
+    tripEventsList.classList.add('trip-events__list');
+    this.#boardContainer.append(tripEventsList);
 
-    // Отрисовка 3-х точек маршрута
-    for (let i = 0; i < 3; i++) {
-      render(new PointView(), this.#boardContainer);
+    // Форма редактирования - первый элемент списка
+    render(new PointEditView(points[0]), tripEventsList);
+
+    // Отрисовка остальных точек маршрута
+    for (let i = 1; i < points.length; i++) {
+      render(new PointView(points[i]), tripEventsList);
     }
   }
 }
