@@ -1,4 +1,4 @@
-import AbstractView from './abstract-view.js';
+import AbstractView from '../framework/view/abstract-view.js';
 import {DESTINATIONS, OFFERS_BY_TYPE, TYPES} from '../mock/point.js';
 
 const createOffersTemplate = (availableOffers, selectedOffers) => {
@@ -52,16 +52,6 @@ const createPointEditTemplate = (point = {
   const destination = DESTINATIONS.find((dest) => dest.id === point.destination);
   const availableOffers = OFFERS_BY_TYPE[point.type] || [];
 
-  const formatDateForInput = (date) => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = String(date.getFullYear()).slice(2);
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-
-    return `${day}/${month}/${year} ${hours}:${minutes}`;
-  };
-
   return `<form class="event event--edit" action="#" method="post">
     <header class="event__header">
       <div class="event__type-wrapper">
@@ -95,10 +85,10 @@ const createPointEditTemplate = (point = {
 
       <div class="event__field-group  event__field-group--time">
         <label class="visually-hidden" for="event-start-time-1">From</label>
-        <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${formatDateForInput(point.dateFrom)}">
+        <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${point.dateFrom.toLocaleDateString('en-US', {day: '2-digit', month: '2-digit', year: '2-digit'})} ${point.dateFrom.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}">
         &mdash;
         <label class="visually-hidden" for="event-end-time-1">To</label>
-        <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${formatDateForInput(point.dateTo)}">
+        <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${point.dateTo.toLocaleDateString('en-US', {day: '2-digit', month: '2-digit', year: '2-digit'})} ${point.dateTo.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}">
       </div>
 
       <div class="event__field-group  event__field-group--price">
@@ -110,7 +100,7 @@ const createPointEditTemplate = (point = {
       </div>
 
       <button class="event__save-btn  btn  btn--blue" type="submit">Save</button>
-      <button class="event__reset-btn" type="reset">Delete</button>
+      <button class="event__reset-btn" type="reset">${point.id ? 'Delete' : 'Cancel'}</button>
       <button class="event__rollup-btn" type="button">
         <span class="visually-hidden">Open event</span>
       </button>
@@ -122,13 +112,30 @@ const createPointEditTemplate = (point = {
 
 export default class PointEditView extends AbstractView {
   #point = null;
+  #handleFormSubmit = null;
+  #handleRollUpClick = null;
 
-  constructor(point) {
+  constructor({point, onFormSubmit, onRollUpClick}) {
     super();
     this.#point = point;
+    this.#handleFormSubmit = onFormSubmit;
+    this.#handleRollUpClick = onRollUpClick;
+
+    this.element.addEventListener('submit', this.#formSubmitHandler);
+    this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#rollUpClickHandler);
   }
 
   get template() {
     return createPointEditTemplate(this.#point);
   }
+
+  #formSubmitHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleFormSubmit();
+  };
+
+  #rollUpClickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleRollUpClick();
+  };
 }
