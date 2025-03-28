@@ -1,12 +1,10 @@
-import AbstractView from './abstract-view.js';
+import AbstractView from '../framework/view/abstract-view.js';
 import {DESTINATIONS, OFFERS_BY_TYPE} from '../mock/point.js';
 
 const createPointTemplate = (point) => {
   const destination = DESTINATIONS.find((dest) => dest.id === point.destination);
-  const pointOffers = point.offers.map((id) => {
-    const typeOffers = OFFERS_BY_TYPE[point.type] || [];
-    return typeOffers.find((offer) => offer.id === id);
-  });
+  const availableOffers = OFFERS_BY_TYPE[point.type] || [];
+  const selectedOffers = availableOffers.filter((offer) => point.offers.includes(offer.id));
 
   // Форматируем дату для отображения
   const formatDate = (date) => {
@@ -31,16 +29,16 @@ const createPointTemplate = (point) => {
 
   return `<li class="trip-events__item">
     <div class="event">
-      <time class="event__date" datetime="${point.dateFrom}">${formatDate(point.dateFrom)}</time>
+      <time class="event__date" datetime="${point.dateFrom.toISOString()}">${formatDate(point.dateFrom)}</time>
       <div class="event__type">
         <img class="event__type-icon" width="42" height="42" src="img/icons/${point.type}.png" alt="Event type icon">
       </div>
-      <h3 class="event__title">${point.type} ${destination.name}</h3>
+      <h3 class="event__title">${point.type} ${destination ? destination.name : ''}</h3>
       <div class="event__schedule">
         <p class="event__time">
-          <time class="event__start-time" datetime="${point.dateFrom}">${formatTime(point.dateFrom)}</time>
+          <time class="event__start-time" datetime="${point.dateFrom.toISOString()}">${formatTime(point.dateFrom)}</time>
           &mdash;
-          <time class="event__end-time" datetime="${point.dateTo}">${formatTime(point.dateTo)}</time>
+          <time class="event__end-time" datetime="${point.dateTo.toISOString()}">${formatTime(point.dateTo)}</time>
         </p>
         <p class="event__duration">${getDuration(point.dateFrom, point.dateTo)}</p>
       </div>
@@ -49,7 +47,7 @@ const createPointTemplate = (point) => {
       </p>
       <h4 class="visually-hidden">Offers:</h4>
       <ul class="event__selected-offers">
-        ${pointOffers.map((offer) => `
+        ${selectedOffers.map((offer) => `
           <li class="event__offer">
             <span class="event__offer-title">${offer.title}</span>
             &plus;&euro;&nbsp;
@@ -72,13 +70,22 @@ const createPointTemplate = (point) => {
 
 export default class PointView extends AbstractView {
   #point = null;
+  #handleEditClick = null;
 
-  constructor(point) {
+  constructor({point, onEditClick}) {
     super();
     this.#point = point;
+    this.#handleEditClick = onEditClick;
+    this.element.querySelector('.event__rollup-btn')
+      .addEventListener('click', this.#editClickHandler);
   }
 
   get template() {
     return createPointTemplate(this.#point);
   }
+
+  #editClickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleEditClick();
+  };
 }
