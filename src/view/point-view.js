@@ -1,23 +1,18 @@
 import AbstractView from '../framework/view/abstract-view.js';
-import {DESTINATIONS, OFFERS_BY_TYPE} from '../mock/point.js';
 
 const createPointTemplate = (point) => {
-  const destination = DESTINATIONS.find((dest) => dest.id === point.destination);
-  const availableOffers = OFFERS_BY_TYPE[point.type] || [];
-  const selectedOffers = availableOffers.filter((offer) => point.offers.includes(offer.id));
+  const destinationName = point.destination?.name || 'Unknown destination'; // Безопасный доступ к имени пункта назначения
+  const selectedOffers = point.selectedOffers || []; // Безопасный доступ к выбранным offers
 
-  // Форматируем дату для отображения
   const formatDate = (date) => {
     const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-    return `${months[date.getMonth()]} ${date.getDate()}`;
+    return `${months[new Date(date).getMonth()]} ${new Date(date).getDate()}`; // Даты теперь в ISO string, нужно создать Date объект
   };
 
-  // Форматируем время
-  const formatTime = (date) => date.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+  const formatTime = (date) => new Date(date).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false}); // Даты теперь в ISO string
 
-  // Вычисляем длительность
   const getDuration = (from, to) => {
-    const diff = to - from;
+    const diff = new Date(to) - new Date(from); // Даты теперь в ISO string
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff / (1000 * 60)) % 60);
 
@@ -29,16 +24,16 @@ const createPointTemplate = (point) => {
 
   return `<li class="trip-events__item">
     <div class="event">
-      <time class="event__date" datetime="${point.dateFrom.toISOString()}">${formatDate(point.dateFrom)}</time>
+      <time class="event__date" datetime="${point.dateFrom}">${formatDate(point.dateFrom)}</time>
       <div class="event__type">
         <img class="event__type-icon" width="42" height="42" src="img/icons/${point.type}.png" alt="Event type icon">
       </div>
-      <h3 class="event__title">${point.type} ${destination ? destination.name : ''}</h3>
+      <h3 class="event__title">${point.type} ${destinationName}</h3>
       <div class="event__schedule">
         <p class="event__time">
-          <time class="event__start-time" datetime="${point.dateFrom.toISOString()}">${formatTime(point.dateFrom)}</time>
-          &mdash;
-          <time class="event__end-time" datetime="${point.dateTo.toISOString()}">${formatTime(point.dateTo)}</time>
+          <time class="event__start-time" datetime="${point.dateFrom}">${formatTime(point.dateFrom)}</time>
+          —
+          <time class="event__end-time" datetime="${point.dateTo}">${formatTime(point.dateTo)}</time>
         </p>
         <p class="event__duration">${getDuration(point.dateFrom, point.dateTo)}</p>
       </div>
@@ -50,7 +45,7 @@ const createPointTemplate = (point) => {
         ${selectedOffers.map((offer) => `
           <li class="event__offer">
             <span class="event__offer-title">${offer.title}</span>
-            &plus;&euro;&nbsp;
+            +€
             <span class="event__offer-price">${offer.price}</span>
           </li>
         `).join('')}

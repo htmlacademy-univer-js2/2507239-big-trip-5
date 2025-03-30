@@ -1,10 +1,18 @@
-import {generatePoint} from '../mock/point.js';
+import {generateMockRoutePoints} from '../mock/point.js';
 
 export default class PointsModel {
-  #points = Array.from({length: 4}, generatePoint);
+  #points = [];
+
+  constructor() {
+    this.#points = generateMockRoutePoints();
+  }
 
   get points() {
     return this.#points;
+  }
+
+  init() {
+    this.#points = generateMockRoutePoints();
   }
 }
 

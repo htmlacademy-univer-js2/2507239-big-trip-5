@@ -1,20 +1,37 @@
 import BoardPresenter from './presenter/board-presenter.js';
-import PointsModel from './model/points-model.js';
 import {render} from './framework/render.js';
 import FilterView from './view/filter-view.js';
-import SortView from './view/sort-view.js';
+import {generateMockRoutePoints, DESTINATIONS, OFFERS_BY_TYPE} from './mock/point.js';
 
 const siteMainElement = document.querySelector('.trip-events');
 const siteHeaderElement = document.querySelector('.trip-controls__filters');
 
-const pointsModel = new PointsModel();
-const boardPresenter = new BoardPresenter({
-  boardContainer: siteMainElement,
-  pointsModel
+const mockRoutePoints = generateMockRoutePoints(5);
+
+const adaptedMockRoutePoints = mockRoutePoints.map((point) => {
+  const destination = DESTINATIONS.find((dest) => dest.id === point.destination);
+  const pointOffers = OFFERS_BY_TYPE[point.type] || [];
+  const selectedOffers = pointOffers.filter((offer) => point.offers.includes(offer.id));
+
+  return {
+    ...point,
+    destination,
+    selectedOffers
+  };
 });
 
-render(new FilterView(), siteHeaderElement);
-boardPresenter.init();
+const filters = {
+  everything: adaptedMockRoutePoints.length > 0,
+  future: true,
+  present: true,
+  past: true
+};
 
-const sortComponent = new SortView();
-render(sortComponent, siteMainElement);
+const boardPresenter = new BoardPresenter({
+  boardContainer: siteMainElement
+});
+
+render(new FilterView(filters), siteHeaderElement);
+
+
+boardPresenter.init(adaptedMockRoutePoints, DESTINATIONS, OFFERS_BY_TYPE);
