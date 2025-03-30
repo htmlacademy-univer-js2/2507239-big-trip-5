@@ -60,8 +60,8 @@ const generatePoint = () => {
 
   return {
     basePrice: getRandomInteger(20, 1000),
-    dateFrom: new Date('2019-07-10T22:55:56.845Z'),
-    dateTo: new Date('2019-07-11T11:22:13.375Z'),
+    dateFrom: new Date('2023-10-20T10:00:00.000Z').toISOString(),
+    dateTo: new Date('2023-10-21T12:00:00.000Z').toISOString(),
     destination: DESTINATIONS[getRandomInteger(0, DESTINATIONS.length - 1)].id,
     id: getRandomInteger(1, 100),
     isFavorite: Boolean(getRandomInteger(0, 1)),
@@ -71,4 +71,7 @@ const generatePoint = () => {
   };
 };
 
-export {generatePoint, DESTINATIONS, OFFERS_BY_TYPE, TYPES};
+const generateMockRoutePoints = (count) =>
+  Array.from({length: count}, generatePoint);
+
+export {generatePoint, DESTINATIONS, OFFERS_BY_TYPE, TYPES, generateMockRoutePoints};
