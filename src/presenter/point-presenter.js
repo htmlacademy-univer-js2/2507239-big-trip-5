@@ -17,11 +17,16 @@ export default class PointPresenter {
   #pointComponent = null;
   #pointEditComponent = null;
   #mode = Mode.DEFAULT;
+  #handleDataChange = null;
+  #handleModeChange = null;
 
-  constructor({pointListContainer, destinations, offersByType}) {
+
+  constructor({pointListContainer, destinations, offersByType, onDataChange, onModeChange}) {
     this.#pointListContainer = pointListContainer;
     this.#destinations = destinations;
     this.#offersByType = offersByType;
+    this.#handleDataChange = onDataChange;
+    this.#handleModeChange = onModeChange;
   }
 
   init(point) {
@@ -33,6 +38,7 @@ export default class PointPresenter {
     this.#pointComponent = new PointView({
       point: this.#point,
       onEditClick: this.#handleEditClick,
+      onFavoriteClick: this.#handleFavoriteClick,
     });
 
     this.#pointEditComponent = new PointEditView({
@@ -76,6 +82,9 @@ export default class PointPresenter {
     replace(this.#pointEditComponent, this.#pointComponent);
     document.addEventListener('keydown', this.#escKeyDownHandler);
     this.#mode = Mode.EDITING;
+    if (this.#handleModeChange) {
+      this.#handleModeChange(this);
+    }
   };
 
   #replaceFormToCard = () => {
@@ -103,5 +112,9 @@ export default class PointPresenter {
 
   #handleRollUpClick = () => {
     this.#replaceFormToCard();
+  };
+
+  #handleFavoriteClick = () => {
+    this.#handleDataChange({...this.#point, isFavorite: !this.#point.isFavorite});
   };
 }

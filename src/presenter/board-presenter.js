@@ -19,7 +19,7 @@ export default class BoardPresenter {
   }
 
   init(routePoints, destinations, offersByType) {
-    this.#routePoints = routePoints;
+    this.#routePoints = [...routePoints];
     this.#destinations = destinations;
     this.#offersByType = offersByType;
 
@@ -27,6 +27,19 @@ export default class BoardPresenter {
 
     this.#renderBoard();
   }
+
+  #handlePointDataChange = (updatedPoint) => {
+    this.#routePoints = this.#routePoints.map((point) => point.id === updatedPoint.id ? updatedPoint : point);
+    this.#pointPresenters.get(updatedPoint.id).init(updatedPoint);
+  };
+
+  #handlePointModeChange = (activePresenter) => {
+    this.#pointPresenters.forEach((presenter) => {
+      if (presenter !== activePresenter) {
+        presenter.resetView();
+      }
+    });
+  };
 
   #clearBoard() {
     this.#pointPresenters.forEach((presenter) => presenter.destroy());
@@ -70,6 +83,8 @@ export default class BoardPresenter {
       pointListContainer: this.#tripEventsList,
       destinations: this.#destinations,
       offersByType: this.#offersByType,
+      onDataChange: this.#handlePointDataChange,
+      onModeChange: this.#handlePointModeChange,
     });
     pointPresenter.init(point);
     this.#pointPresenters.set(point.id, pointPresenter);
