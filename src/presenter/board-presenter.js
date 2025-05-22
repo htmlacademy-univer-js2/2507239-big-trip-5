@@ -1,8 +1,7 @@
-import {render, replace, remove} from '../framework/render.js';
-import PointView from '../view/point-view.js';
-import PointEditView from '../view/point-edit-view.js';
+import {render, remove} from '../framework/render.js';
 import SortView from '../view/sort-view.js';
 import EmptyPointsView from '../view/empty-points-view.js';
+import PointPresenter from './point-presenter.js';
 
 export default class BoardPresenter {
   #boardContainer = null;
@@ -13,7 +12,7 @@ export default class BoardPresenter {
 
   #sortComponent = null;
   #emptyListComponent = null;
-
+  #pointPresenters = new Map();
 
   constructor({boardContainer}) {
     this.#boardContainer = boardContainer;
@@ -30,8 +29,10 @@ export default class BoardPresenter {
   }
 
   #clearBoard() {
+    this.#pointPresenters.forEach((presenter) => presenter.destroy());
+    this.#pointPresenters.clear();
+
     if (this.#tripEventsList) {
-      this.#tripEventsList.innerHTML = '';
       remove(this.#tripEventsList);
       this.#tripEventsList = null;
     }
@@ -65,37 +66,12 @@ export default class BoardPresenter {
   }
 
   #renderPoint(point) {
-    let pointComponent = null;
-    let pointEditComponent = null;
-    function escKeyDownHandler(evt) {
-      if (evt.key === 'Escape' || evt.key === 'Esc') {
-        evt.preventDefault();
-        replace(pointComponent, pointEditComponent);
-        document.removeEventListener('keydown', escKeyDownHandler);
-      }
-    }
-    pointComponent = new PointView({
-      point: point,
-      onEditClick: () => {
-        replace(pointEditComponent, pointComponent);
-        document.addEventListener('keydown', escKeyDownHandler);
-      }
-    });
-
-    pointEditComponent = new PointEditView({
-      point: point,
+    const pointPresenter = new PointPresenter({
+      pointListContainer: this.#tripEventsList,
       destinations: this.#destinations,
       offersByType: this.#offersByType,
-      onFormSubmit: () => {
-        replace(pointComponent, pointEditComponent);
-        document.removeEventListener('keydown', escKeyDownHandler);
-      },
-      onRollUpClick: () => {
-        replace(pointComponent, pointEditComponent);
-        document.removeEventListener('keydown', escKeyDownHandler);
-      }
     });
-
-    render(pointComponent, this.#tripEventsList);
+    pointPresenter.init(point);
+    this.#pointPresenters.set(point.id, pointPresenter);
   }
 }
