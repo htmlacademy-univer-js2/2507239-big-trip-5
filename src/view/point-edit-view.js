@@ -1,5 +1,8 @@
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
 import {TYPES} from '../mock/point.js';
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
+import dayjs from 'dayjs';
 
 const createOffersTemplate = (availableOffers, selectedOffersIds) => {
   if (!availableOffers || !availableOffers.length) {
@@ -47,20 +50,8 @@ const createDestinationTemplate = (destination) => {
 const createPointEditTemplate = (_state, destinationsList, offersByType) => {
   const currentDestination = _state.destination;
   const availableOffers = offersByType[_state.type] || [];
-  const formatValueDate = (dateString) => {
-    if (!dateString) {
-      return '';
-    }
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return '';
-      }
-      return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}/${String(date.getFullYear()).slice(-2)} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-    } catch (e) {
-      return '';
-    }
-  };
+
+  const formatForFlatpickr = (dateString) => dateString ? dayjs(dateString).format('DD/MM/YY HH:mm') : '';
 
   return `<form class="event event--edit" action="#" method="post">
     <header class="event__header">
@@ -95,10 +86,10 @@ const createPointEditTemplate = (_state, destinationsList, offersByType) => {
 
       <div class="event__field-group  event__field-group--time">
         <label class="visually-hidden" for="event-start-time-1">From</label>
-        <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${formatValueDate(_state.dateFrom)}">
+        <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${formatForFlatpickr(_state.dateFrom)}">
         —
         <label class="visually-hidden" for="event-end-time-1">To</label>
-        <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${formatValueDate(_state.dateTo)}">
+        <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${formatForFlatpickr(_state.dateTo)}">
       </div>
 
       <div class="event__field-group  event__field-group--price">
@@ -125,6 +116,8 @@ export default class PointEditView extends AbstractStatefulView {
   #handleRollUpClick = null;
   #allDestinations = [];
   #allOffersByType = {};
+  #datepickerFrom = null;
+  #datepickerTo = null;
 
   constructor({point, onFormSubmit, onRollUpClick, destinations, offersByType}) {
     super();
@@ -141,15 +134,76 @@ export default class PointEditView extends AbstractStatefulView {
     return createPointEditTemplate(this._state, this.#allDestinations, this.#allOffersByType);
   }
 
+  removeElement() {
+    super.removeElement();
+    if (this.#datepickerFrom) {
+      this.#datepickerFrom.destroy();
+      this.#datepickerFrom = null;
+    }
+    if (this.#datepickerTo) {
+      this.#datepickerTo.destroy();
+      this.#datepickerTo = null;
+    }
+  }
+
   _restoreHandlers() {
     this.element.addEventListener('submit', this.#formSubmitHandler);
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#rollUpClickHandler);
     this.element.querySelector('.event__type-group').addEventListener('change', this.#typeChangeHandler);
     this.element.querySelector('.event__input--destination').addEventListener('change', this.#destinationChangeHandler);
+
     const offersElement = this.element.querySelector('.event__available-offers');
     if (offersElement) {
       offersElement.addEventListener('change', this.#offerChangeHandler);
     }
+
+    this.#setDatepickers();
+  }
+
+  #setDatepickers() {
+    if (this.#datepickerFrom) {
+      this.#datepickerFrom.destroy();
+      this.#datepickerFrom = null;
+    }
+    if (this.#datepickerTo) {
+      this.#datepickerTo.destroy();
+      this.#datepickerTo = null;
+    }
+
+    const commonConfig = {
+      enableTime: true,
+      time24hr: true,
+      dateFormat: 'Z',
+      altInput: true,
+      altFormat: 'd/m/y H:i',
+      allowInput: true,
+    };
+
+    this.#datepickerFrom = flatpickr(
+      this.element.querySelector('#event-start-time-1'),
+      {
+        ...commonConfig,
+        defaultDate: this._state.dateFrom || 'today',
+        onClose: ([userDate]) => {
+          this.updateElement({ dateFrom: userDate ? userDate.toISOString() : null });
+          if (this.#datepickerTo) {
+            this.#datepickerTo.set('minDate', userDate || null);
+          }
+        },
+      }
+    );
+
+    this.#datepickerTo = flatpickr(
+      this.element.querySelector('#event-end-time-1'),
+      {
+        ...commonConfig,
+        defaultDate: this._state.dateTo || 'today',
+        minDate: this._state.dateFrom || null,
+        onClose: ([userDate]) => {
+          this.updateElement({ dateTo: userDate ? userDate.toISOString() : null });
+        },
+      }
+    );
   }
 
   #formSubmitHandler = (evt) => {
@@ -193,10 +247,7 @@ export default class PointEditView extends AbstractStatefulView {
       const currentOffers = this._state.offers.includes(offerId)
         ? this._state.offers.filter((id) => id !== offerId)
         : [...this._state.offers, offerId];
-
-      this.updateElement({
-        offers: currentOffers
-      });
+      this.updateElement({ offers: currentOffers });
     }
   };
 
