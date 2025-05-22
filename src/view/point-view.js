@@ -1,18 +1,18 @@
 import AbstractView from '../framework/view/abstract-view.js';
 
 const createPointTemplate = (point) => {
-  const destinationName = point.destination?.name || 'Unknown destination'; // Безопасный доступ к имени пункта назначения
-  const selectedOffers = point.selectedOffers || []; // Безопасный доступ к выбранным offers
+  const destinationName = point.destination?.name || 'Unknown destination';
+  const selectedOffers = point.selectedOffers || [];
 
   const formatDate = (date) => {
     const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-    return `${months[new Date(date).getMonth()]} ${new Date(date).getDate()}`; // Даты теперь в ISO string, нужно создать Date объект
+    return `${months[new Date(date).getMonth()]} ${new Date(date).getDate()}`;
   };
 
-  const formatTime = (date) => new Date(date).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false}); // Даты теперь в ISO string
+  const formatTime = (date) => new Date(date).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
 
   const getDuration = (from, to) => {
-    const diff = new Date(to) - new Date(from); // Даты теперь в ISO string
+    const diff = new Date(to) - new Date(from);
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff / (1000 * 60)) % 60);
 
@@ -66,13 +66,18 @@ const createPointTemplate = (point) => {
 export default class PointView extends AbstractView {
   #point = null;
   #handleEditClick = null;
+  #handleFavoriteClick = null;
 
-  constructor({point, onEditClick}) {
+  constructor({point, onEditClick, onFavoriteClick}) {
     super();
     this.#point = point;
     this.#handleEditClick = onEditClick;
+    this.#handleFavoriteClick = onFavoriteClick;
+
     this.element.querySelector('.event__rollup-btn')
       .addEventListener('click', this.#editClickHandler);
+    this.element.querySelector('.event__favorite-btn')
+      .addEventListener('click', this.#favoriteClickHandler);
   }
 
   get template() {
@@ -82,5 +87,10 @@ export default class PointView extends AbstractView {
   #editClickHandler = (evt) => {
     evt.preventDefault();
     this.#handleEditClick();
+  };
+
+  #favoriteClickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleFavoriteClick();
   };
 }
