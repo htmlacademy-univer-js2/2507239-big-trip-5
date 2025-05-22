@@ -54,16 +54,34 @@ const OFFERS_BY_TYPE = {
   ]
 };
 
+let nextPointId = 0;
+const getUniqueId = () => nextPointId++;
+
 const generatePoint = () => {
   const type = TYPES[getRandomInteger(0, TYPES.length - 1)];
   const availableOffers = OFFERS_BY_TYPE[type] || [];
 
+  const startDate = new Date('2023-10-01T00:00:00.000Z');
+  const dayOffset = getRandomInteger(0, 10);
+  const hourOffsetFrom = getRandomInteger(8, 18);
+  const minuteOffsetFrom = getRandomInteger(0, 59);
+
+  const dateFrom = new Date(startDate);
+  dateFrom.setDate(startDate.getDate() + dayOffset);
+  dateFrom.setUTCHours(hourOffsetFrom, minuteOffsetFrom, 0, 0);
+
+  const durationHours = getRandomInteger(1, 5);
+  const durationMinutes = getRandomInteger(0, 59);
+
+  const dateTo = new Date(dateFrom);
+  dateTo.setUTCHours(dateFrom.getUTCHours() + durationHours, dateFrom.getUTCMinutes() + durationMinutes, 0, 0);
+
   return {
     basePrice: getRandomInteger(20, 1000),
-    dateFrom: new Date('2023-10-20T10:00:00.000Z').toISOString(),
-    dateTo: new Date('2023-10-21T12:00:00.000Z').toISOString(),
+    dateFrom: dateFrom.toISOString(),
+    dateTo: dateTo.toISOString(),
     destination: DESTINATIONS[getRandomInteger(0, DESTINATIONS.length - 1)].id,
-    id: getRandomInteger(1, 100),
+    id: getUniqueId(),
     isFavorite: Boolean(getRandomInteger(0, 1)),
     offers: availableOffers.length ?
       [availableOffers[getRandomInteger(0, availableOffers.length - 1)].id] : [],
@@ -71,7 +89,9 @@ const generatePoint = () => {
   };
 };
 
-const generateMockRoutePoints = (count) =>
-  Array.from({length: count}, generatePoint);
+const generateMockRoutePoints = (count) => {
+  nextPointId = 0;
+  return Array.from({length: count}, generatePoint);
+};
 
 export {generatePoint, DESTINATIONS, OFFERS_BY_TYPE, TYPES, generateMockRoutePoints};
