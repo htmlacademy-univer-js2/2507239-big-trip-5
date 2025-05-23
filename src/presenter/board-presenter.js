@@ -4,7 +4,7 @@ import EmptyPointsView from '../view/empty-points-view.js';
 import PointPresenter from './point-presenter.js';
 import {sortPointsByDay, sortPointsByTime, sortPointsByPrice} from '../utils.js';
 import {filter} from '../utils.js';
-import {UpdateType} from '../const.js';
+import {UpdateType, UserAction, FilterType} from '../const.js';
 
 export default class BoardPresenter {
   #boardContainer = null;
@@ -15,6 +15,7 @@ export default class BoardPresenter {
   #emptyListComponent = null;
   #pointPresenters = new Map();
   #currentSortType = SortType.DAY;
+  #newPointPresenter = null;
 
   constructor({boardContainer, pointsModel, filtersModel}) {
     this.#boardContainer = boardContainer;
@@ -53,20 +54,43 @@ export default class BoardPresenter {
     this.#renderBoard();
   }
 
+  createPoint() {
+    this.#filtersModel.setFilter(UpdateType.MAJOR, FilterType.EVERYTHING);
+    this.#currentSortType = SortType.DAY;
+
+    this.#pointPresenters.forEach((presenter) => presenter.resetView());
+
+    if (this.#newPointPresenter) {
+      this.#newPointPresenter.destroy();
+    }
+
+  }
+
+  #handleViewAction = (actionType, update) => {
+    switch (actionType) {
+      case UserAction.UPDATE_POINT:
+        this.#pointsModel.updatePoint(update);
+        break;
+      case UserAction.ADD_POINT:
+        this.#pointsModel.addPoint(update);
+        break;
+      case UserAction.DELETE_POINT:
+        this.#pointsModel.deletePoint(update);
+        break;
+    }
+  };
+
   #handleModelEvent = (updateType, data) => {
     switch (updateType) {
       case UpdateType.PATCH:
         this.#pointPresenters.get(data.id).init(data);
         break;
       case UpdateType.MINOR:
-        this.#clearPointsList();
-        this.#renderPoints();
+        this.#clearBoard();
+        this.#renderBoard();
         break;
       case UpdateType.MAJOR:
         this.#clearBoard({resetSortType: true});
-        this.#renderBoard();
-        break;
-      case UpdateType.INIT:
         this.#renderBoard();
         break;
     }
@@ -179,7 +203,7 @@ export default class BoardPresenter {
       pointListContainer: this.#tripEventsList,
       destinations: this.destinations,
       offersByType: this.offersByType,
-      onDataChange: this.#handlePointDataChange,
+      onDataChange: this.#handleViewAction,
       onModeChange: this.#handlePointModeChange,
     });
     pointPresenter.init(point);

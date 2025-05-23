@@ -114,16 +114,18 @@ const createPointEditTemplate = (_state, destinationsList, offersByType) => {
 export default class PointEditView extends AbstractStatefulView {
   #handleFormSubmit = null;
   #handleRollUpClick = null;
+  #handleDeleteClick = null;
   #allDestinations = [];
   #allOffersByType = {};
   #datepickerFrom = null;
   #datepickerTo = null;
 
-  constructor({point, onFormSubmit, onRollUpClick, destinations, offersByType}) {
+  constructor({point, onFormSubmit, onRollUpClick, onDeleteClick, destinations, offersByType}) {
     super();
     this._state = PointEditView.parsePointToState(point);
     this.#handleFormSubmit = onFormSubmit;
     this.#handleRollUpClick = onRollUpClick;
+    this.#handleDeleteClick = onDeleteClick;
     this.#allDestinations = destinations;
     this.#allOffersByType = offersByType;
 
@@ -157,6 +159,11 @@ export default class PointEditView extends AbstractStatefulView {
       offersElement.addEventListener('change', this.#offerChangeHandler);
     }
 
+    const resetButton = this.element.querySelector('.event__reset-btn');
+    if (resetButton && this.#handleDeleteClick) {
+      resetButton.addEventListener('click', this.#resetButtonClickHandler);
+    }
+
     this.#setDatepickers();
   }
 
@@ -172,7 +179,7 @@ export default class PointEditView extends AbstractStatefulView {
 
     const commonConfig = {
       enableTime: true,
-      time24hr: true,
+      'time_24hr': true,
       dateFormat: 'Z',
       altInput: true,
       altFormat: 'd/m/y H:i',
@@ -251,13 +258,20 @@ export default class PointEditView extends AbstractStatefulView {
     }
   };
 
+  #resetButtonClickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleDeleteClick(PointEditView.parseStateToPoint(this._state));
+  };
+
   reset(point) {
     this.updateElement(PointEditView.parsePointToState(point));
   }
 
   static parsePointToState(point) {
     const clonedPoint = structuredClone(point);
-    return {...clonedPoint};
+    return {
+      ...clonedPoint,
+    };
   }
 
   static parseStateToPoint(state) {
