@@ -33,11 +33,20 @@ export default class PointPresenter {
   init(point) {
     this.#point = point;
 
+    const pointDestinationObject = this.#destinations.find((dest) => dest.id === this.#point.destination);
+
+    const availableOffersForType = this.#offersByType[this.#point.type] || [];
+    const selectedPointOfferObjects = availableOffersForType.filter((offer) => this.#point.offers.includes(offer.id));
+
     const prevPointComponent = this.#pointComponent;
     const prevPointEditComponent = this.#pointEditComponent;
 
     this.#pointComponent = new PointView({
-      point: this.#point,
+      point: {
+        ...this.#point,
+        destination: pointDestinationObject,
+        selectedOffers: selectedPointOfferObjects,
+      },
       onEditClick: this.#handleEditClick,
       onFavoriteClick: this.#handleFavoriteClick,
     });
