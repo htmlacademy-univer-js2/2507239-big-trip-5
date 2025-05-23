@@ -1,37 +1,25 @@
 import BoardPresenter from './presenter/board-presenter.js';
-import {render} from './framework/render.js';
-import FilterView from './view/filter-view.js';
-import {generateMockRoutePoints, DESTINATIONS, OFFERS_BY_TYPE} from './mock/point.js';
+import FilterPresenter from './presenter/filter-presenter.js';
+import PointsModel from './model/points-model.js';
+import FiltersModel from './model/filters-model.js';
 
 const siteMainElement = document.querySelector('.trip-events');
 const siteHeaderElement = document.querySelector('.trip-controls__filters');
 
-const mockRoutePoints = generateMockRoutePoints(5);
-
-const adaptedMockRoutePoints = mockRoutePoints.map((point) => {
-  const destination = DESTINATIONS.find((dest) => dest.id === point.destination);
-  const pointOffers = OFFERS_BY_TYPE[point.type] || [];
-  const selectedOffers = pointOffers.filter((offer) => point.offers.includes(offer.id));
-
-  return {
-    ...point,
-    destination,
-    selectedOffers
-  };
-});
-
-const filters = {
-  everything: adaptedMockRoutePoints.length > 0,
-  future: true,
-  present: true,
-  past: true
-};
+const pointsModel = new PointsModel();
+const filtersModel = new FiltersModel();
 
 const boardPresenter = new BoardPresenter({
-  boardContainer: siteMainElement
+  boardContainer: siteMainElement,
+  pointsModel: pointsModel,
+  filtersModel: filtersModel,
 });
 
-render(new FilterView(filters), siteHeaderElement);
+const filterPresenter = new FilterPresenter({
+  filterContainer: siteHeaderElement,
+  pointsModel: pointsModel,
+  filtersModel: filtersModel,
+});
 
-
-boardPresenter.init(adaptedMockRoutePoints, DESTINATIONS, OFFERS_BY_TYPE);
+filterPresenter.init();
+boardPresenter.init();
