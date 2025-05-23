@@ -1,6 +1,14 @@
 import dayjs from 'dayjs';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import durationPlugin from 'dayjs/plugin/duration';
+import {FilterType} from './const.js';
+
 dayjs.extend(durationPlugin);
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
+
+const now = dayjs();
 
 const getWeightForNullDate = (dateA, dateB) => {
   if (dateA === null && dateB === null) {
@@ -75,6 +83,13 @@ const getRandomInteger = (a = 0, b = 1) => {
   return Math.floor(lower + Math.random() * (upper - lower + 1));
 };
 
+const filter = {
+  [FilterType.EVERYTHING]: (points) => points,
+  [FilterType.FUTURE]: (points) => points.filter((point) => dayjs(point.dateFrom).isAfter(now)),
+  [FilterType.PRESENT]: (points) => points.filter((point) => dayjs(point.dateFrom).isSameOrBefore(now) && dayjs(point.dateTo).isSameOrAfter(now)),
+  [FilterType.PAST]: (points) => points.filter((point) => dayjs(point.dateTo).isBefore(now)),
+};
+
 export {
   getRandomInteger,
   sortPointsByDay,
@@ -82,5 +97,6 @@ export {
   sortPointsByPrice,
   formatDateToMonthDay,
   formatTimeToHourMinute,
-  formatDuration
+  formatDuration,
+  filter,
 };

@@ -1,4 +1,6 @@
+import Observable from '../framework/observable.js';
 import {generateMockRoutePoints, DESTINATIONS, OFFERS_BY_TYPE} from '../mock/point.js';
+import {UpdateType} from '../const.js';
 
 const adaptPointData = (point) => {
   const destination = DESTINATIONS.find((dest) => dest.id === point.destination);
@@ -12,12 +14,13 @@ const adaptPointData = (point) => {
   };
 };
 
-export default class PointsModel {
+export default class PointsModel extends Observable {
   #points = [];
   #destinations = DESTINATIONS;
   #offersByType = OFFERS_BY_TYPE;
 
   constructor() {
+    super();
     const mockPoints = generateMockRoutePoints(5);
     this.#points = mockPoints.map(adaptPointData);
   }
@@ -46,10 +49,12 @@ export default class PointsModel {
       updatedPoint,
       ...this.#points.slice(index + 1),
     ];
+    this._notify(UpdateType.PATCH, updatedPoint);
   }
 
   setPoints(points) {
     this.#points = [...points];
+    this._notify(UpdateType.MAJOR, points);
   }
 }
 

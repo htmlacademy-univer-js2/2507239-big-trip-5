@@ -61,20 +61,35 @@ const generatePoint = () => {
   const type = TYPES[getRandomInteger(0, TYPES.length - 1)];
   const availableOffers = OFFERS_BY_TYPE[type] || [];
 
-  const startDate = new Date('2023-10-01T00:00:00.000Z');
-  const dayOffset = getRandomInteger(0, 10);
+  const now = new Date();
+  const dayOffsetType = getRandomInteger(-1, 1);
+
+  const dateFrom = new Date(now);
+  let dateTo = new Date(now);
+
   const hourOffsetFrom = getRandomInteger(8, 18);
   const minuteOffsetFrom = getRandomInteger(0, 59);
-
-  const dateFrom = new Date(startDate);
-  dateFrom.setDate(startDate.getDate() + dayOffset);
-  dateFrom.setUTCHours(hourOffsetFrom, minuteOffsetFrom, 0, 0);
-
   const durationHours = getRandomInteger(1, 5);
   const durationMinutes = getRandomInteger(0, 59);
 
-  const dateTo = new Date(dateFrom);
-  dateTo.setUTCHours(dateFrom.getUTCHours() + durationHours, dateFrom.getUTCMinutes() + durationMinutes, 0, 0);
+  if (dayOffsetType === -1) {
+    const pastDayOffset = getRandomInteger(1, 10);
+    dateFrom.setDate(now.getDate() - pastDayOffset);
+    dateFrom.setUTCHours(hourOffsetFrom, minuteOffsetFrom, 0, 0);
+    dateTo = new Date(dateFrom);
+    dateTo.setUTCHours(dateFrom.getUTCHours() + durationHours, dateFrom.getUTCMinutes() + durationMinutes, 0, 0);
+  } else if (dayOffsetType === 0) {
+    const presentOffsetSign = getRandomInteger(0, 1) === 0 ? -1 : 1;
+    dateFrom.setUTCHours(now.getUTCHours() + (presentOffsetSign * getRandomInteger(0, 2)), minuteOffsetFrom, 0, 0);
+    dateTo = new Date(dateFrom);
+    dateTo.setUTCHours(dateFrom.getUTCHours() + durationHours, dateFrom.getUTCMinutes() + durationMinutes, 0, 0);
+  } else {
+    const futureDayOffset = getRandomInteger(1, 10);
+    dateFrom.setDate(now.getDate() + futureDayOffset);
+    dateFrom.setUTCHours(hourOffsetFrom, minuteOffsetFrom, 0, 0);
+    dateTo = new Date(dateFrom);
+    dateTo.setUTCHours(dateFrom.getUTCHours() + durationHours, dateFrom.getUTCMinutes() + durationMinutes, 0, 0);
+  }
 
   return {
     basePrice: getRandomInteger(20, 1000),

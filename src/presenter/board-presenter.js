@@ -3,32 +3,41 @@ import SortView, {SortType} from '../view/sort-view.js';
 import EmptyPointsView from '../view/empty-points-view.js';
 import PointPresenter from './point-presenter.js';
 import {sortPointsByDay, sortPointsByTime, sortPointsByPrice} from '../utils.js';
+import {filter} from '../utils.js';
+import {UpdateType} from '../const.js';
 
 export default class BoardPresenter {
   #boardContainer = null;
   #pointsModel = null;
+  #filtersModel = null;
   #tripEventsList = null;
-
   #sortComponent = null;
   #emptyListComponent = null;
   #pointPresenters = new Map();
   #currentSortType = SortType.DAY;
 
-  constructor({boardContainer, pointsModel}) {
+  constructor({boardContainer, pointsModel, filtersModel}) {
     this.#boardContainer = boardContainer;
     this.#pointsModel = pointsModel;
+    this.#filtersModel = filtersModel;
+
+    this.#pointsModel.addObserver(this.#handleModelEvent);
+    this.#filtersModel.addObserver(this.#handleModelEvent);
   }
 
   get points() {
-    const points = this.#pointsModel.points;
+    const currentFilterType = this.#filtersModel.filter;
+    const allPoints = this.#pointsModel.points;
+    const filteredPoints = filter[currentFilterType](allPoints);
+
     switch (this.#currentSortType) {
       case SortType.TIME:
-        return points.slice().sort(sortPointsByTime);
+        return filteredPoints.sort(sortPointsByTime);
       case SortType.PRICE:
-        return points.slice().sort(sortPointsByPrice);
+        return filteredPoints.sort(sortPointsByPrice);
       case SortType.DAY:
       default:
-        return points.slice().sort(sortPointsByDay);
+        return filteredPoints.sort(sortPointsByDay);
     }
   }
 
@@ -41,13 +50,30 @@ export default class BoardPresenter {
   }
 
   init() {
-    this.#clearBoard({resetSortType: false});
     this.#renderBoard();
   }
 
+  #handleModelEvent = (updateType, data) => {
+    switch (updateType) {
+      case UpdateType.PATCH:
+        this.#pointPresenters.get(data.id).init(data);
+        break;
+      case UpdateType.MINOR:
+        this.#clearPointsList();
+        this.#renderPoints();
+        break;
+      case UpdateType.MAJOR:
+        this.#clearBoard({resetSortType: true});
+        this.#renderBoard();
+        break;
+      case UpdateType.INIT:
+        this.#renderBoard();
+        break;
+    }
+  };
+
   #handlePointDataChange = (updatedPoint) => {
     this.#pointsModel.updatePoint(updatedPoint);
-    this.#pointPresenters.get(updatedPoint.id).init(updatedPoint);
   };
 
   #handleSortTypeChange = (sortType) => {
@@ -74,10 +100,17 @@ export default class BoardPresenter {
       remove(this.#sortComponent);
       this.#sortComponent = null;
     }
+
     if (this.#emptyListComponent) {
       remove(this.#emptyListComponent);
       this.#emptyListComponent = null;
     }
+
+    if (this.#tripEventsList) {
+      this.#tripEventsList.remove();
+      this.#tripEventsList = null;
+    }
+
     if (resetSortType) {
       this.#currentSortType = SortType.DAY;
     }
@@ -90,17 +123,18 @@ export default class BoardPresenter {
 
   #renderSort() {
     this.#sortComponent = new SortView({
+      currentSortType: this.#currentSortType,
       onSortTypeChange: this.#handleSortTypeChange
     });
-    const currentSortInput = this.#sortComponent.element.querySelector(`[data-sort-type="${this.#currentSortType}"]`);
-    if (currentSortInput) {
-      const inputId = currentSortInput.htmlFor || currentSortInput.id;
-      const inputElement = this.#sortComponent.element.querySelector(`#${inputId.startsWith('sort-') ? inputId : `sort-${this.#currentSortType}`}`);
-      if(inputElement) {
-        inputElement.checked = true;
-      }
-    }
     render(this.#sortComponent, this.#boardContainer);
+  }
+
+  #renderEmptyList() {
+    const filterType = this.#filtersModel.filter;
+    this.#emptyListComponent = new EmptyPointsView({
+      messageType: filterType
+    });
+    render(this.#emptyListComponent, this.#boardContainer);
   }
 
   #renderPoints() {
@@ -111,17 +145,19 @@ export default class BoardPresenter {
   }
 
   #renderBoard() {
-    const currentPoints = this.points;
-    if (currentPoints.length === 0 && !this.#emptyListComponent) {
-      if (this.#tripEventsList) {
+    if (!this.#sortComponent) {
+      this.#renderSort();
+    }
+
+    const pointsToRender = this.points;
+
+    if (pointsToRender.length === 0) {
+      this.#clearPointsList();
+      if(this.#tripEventsList) {
         remove(this.#tripEventsList);
         this.#tripEventsList = null;
       }
-      this.#emptyListComponent = new EmptyPointsView();
-      render(this.#emptyListComponent, this.#boardContainer);
-      if (!this.#sortComponent) {
-        this.#renderSort();
-      }
+      this.#renderEmptyList();
       return;
     }
 
@@ -130,18 +166,10 @@ export default class BoardPresenter {
       this.#emptyListComponent = null;
     }
 
-    if (!this.#sortComponent) {
-      this.#renderSort();
-    }
-
     if (!this.#tripEventsList) {
       this.#tripEventsList = document.createElement('ul');
       this.#tripEventsList.classList.add('trip-events__list');
-      if(this.#sortComponent && this.#sortComponent.element.nextSibling) {
-        this.#boardContainer.insertBefore(this.#tripEventsList, this.#sortComponent.element.nextSibling);
-      } else {
-        this.#boardContainer.append(this.#tripEventsList);
-      }
+      this.#boardContainer.insertBefore(this.#tripEventsList, this.#sortComponent.element.nextSibling);
     }
     this.#renderPoints();
   }

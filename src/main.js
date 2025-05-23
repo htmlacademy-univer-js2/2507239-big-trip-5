@@ -1,25 +1,25 @@
 import BoardPresenter from './presenter/board-presenter.js';
-import {render} from './framework/render.js';
-import FilterView from './view/filter-view.js';
+import FilterPresenter from './presenter/filter-presenter.js';
 import PointsModel from './model/points-model.js';
+import FiltersModel from './model/filters-model.js';
 
 const siteMainElement = document.querySelector('.trip-events');
 const siteHeaderElement = document.querySelector('.trip-controls__filters');
 
 const pointsModel = new PointsModel();
-
-const filtersData = {
-  everything: pointsModel.points.length > 0,
-  future: true,
-  present: true,
-  past: true
-};
+const filtersModel = new FiltersModel();
 
 const boardPresenter = new BoardPresenter({
   boardContainer: siteMainElement,
-  pointsModel: pointsModel
+  pointsModel: pointsModel,
+  filtersModel: filtersModel,
 });
 
-render(new FilterView(filtersData), siteHeaderElement);
+const filterPresenter = new FilterPresenter({
+  filterContainer: siteHeaderElement,
+  pointsModel: pointsModel,
+  filtersModel: filtersModel,
+});
 
+filterPresenter.init();
 boardPresenter.init();
