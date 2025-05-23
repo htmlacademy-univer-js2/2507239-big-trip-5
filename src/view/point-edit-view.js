@@ -97,7 +97,7 @@ const createPointEditTemplate = (_state, destinationsList, offersByType) => {
           <span class="visually-hidden">Price</span>
           €
         </label>
-        <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value="${_state.basePrice}">
+        <input class="event__input  event__input--price" id="event-price-1" type="number" name="event-price" value="${_state.basePrice}" min="0">
       </div>
 
       <button class="event__save-btn  btn  btn--blue" type="submit">Save</button>
@@ -164,6 +164,9 @@ export default class PointEditView extends AbstractStatefulView {
       resetButton.addEventListener('click', this.#resetButtonClickHandler);
     }
 
+    this.element.querySelector('.event__input--price')
+      .addEventListener('input', this.#priceInputHandler);
+
     this.#setDatepickers();
   }
 
@@ -215,7 +218,11 @@ export default class PointEditView extends AbstractStatefulView {
 
   #formSubmitHandler = (evt) => {
     evt.preventDefault();
-    this.#handleFormSubmit(PointEditView.parseStateToPoint(this._state));
+    const pointToSubmit = PointEditView.parseStateToPoint(this._state);
+    if (typeof pointToSubmit.basePrice !== 'number') {
+      pointToSubmit.basePrice = Number(pointToSubmit.basePrice) || 0;
+    }
+    this.#handleFormSubmit(pointToSubmit);
   };
 
   #rollUpClickHandler = (evt) => {
@@ -235,15 +242,18 @@ export default class PointEditView extends AbstractStatefulView {
 
   #destinationChangeHandler = (evt) => {
     evt.preventDefault();
-    const selectedDestination = this.#allDestinations.find((dest) => dest.name === evt.target.value);
+    const enteredValue = evt.target.value.trim();
+
+    const selectedDestination = this.#allDestinations.find(
+      (dest) => dest.name.toLowerCase() === enteredValue.toLowerCase()
+    );
+
     if (selectedDestination) {
       this.updateElement({
-        destination: selectedDestination
+        destination: selectedDestination,
       });
     } else {
-      this.updateElement({
-        destination: { name: evt.target.value, description: '', pictures: [] }
-      });
+      evt.target.value = '';
     }
   };
 
@@ -263,14 +273,35 @@ export default class PointEditView extends AbstractStatefulView {
     this.#handleDeleteClick(PointEditView.parseStateToPoint(this._state));
   };
 
+  #priceInputHandler = (evt) => {
+    evt.preventDefault();
+    let priceValue = evt.target.value;
+
+    priceValue = priceValue.replace(/[^\d]/g, '');
+
+    if (priceValue.length > 1 && priceValue.startsWith('0')) {
+      priceValue = priceValue.substring(1);
+    }
+
+    if (priceValue === '') {
+      priceValue = '0';
+    }
+
+    evt.target.value = priceValue;
+
+    this.updateElement({
+      basePrice: Number(priceValue)
+    });
+  };
+
   reset(point) {
     this.updateElement(PointEditView.parsePointToState(point));
   }
 
   static parsePointToState(point) {
-    const clonedPoint = structuredClone(point);
     return {
-      ...clonedPoint,
+      ...structuredClone(point),
+      basePrice: point.basePrice !== undefined ? Number(point.basePrice) : 0,
     };
   }
 
