@@ -6,57 +6,57 @@ import {sortPointsByDay, sortPointsByTime, sortPointsByPrice} from '../utils.js'
 
 export default class BoardPresenter {
   #boardContainer = null;
+  #pointsModel = null;
   #tripEventsList = null;
-  #routePoints = [];
-  #destinations = [];
-  #offersByType = {};
 
   #sortComponent = null;
   #emptyListComponent = null;
   #pointPresenters = new Map();
   #currentSortType = SortType.DAY;
 
-  constructor({boardContainer}) {
+  constructor({boardContainer, pointsModel}) {
     this.#boardContainer = boardContainer;
+    this.#pointsModel = pointsModel;
   }
 
-  init(routePoints, destinations, offersByType) {
-    this.#routePoints = [...routePoints];
-    this.#destinations = destinations;
-    this.#offersByType = offersByType;
+  get points() {
+    const points = this.#pointsModel.points;
+    switch (this.#currentSortType) {
+      case SortType.TIME:
+        return points.slice().sort(sortPointsByTime);
+      case SortType.PRICE:
+        return points.slice().sort(sortPointsByPrice);
+      case SortType.DAY:
+      default:
+        return points.slice().sort(sortPointsByDay);
+    }
+  }
 
-    this.#sortPoints(this.#currentSortType);
+  get destinations() {
+    return this.#pointsModel.destinations;
+  }
+
+  get offersByType() {
+    return this.#pointsModel.offersByType;
+  }
+
+  init() {
     this.#clearBoard({resetSortType: false});
     this.#renderBoard();
   }
 
-  #sortPoints(sortType) {
-    switch (sortType) {
-      case SortType.TIME:
-        this.#routePoints.sort(sortPointsByTime);
-        break;
-      case SortType.PRICE:
-        this.#routePoints.sort(sortPointsByPrice);
-        break;
-      case SortType.DAY:
-      default:
-        this.#routePoints.sort(sortPointsByDay);
-    }
-    this.#currentSortType = sortType;
-  }
+  #handlePointDataChange = (updatedPoint) => {
+    this.#pointsModel.updatePoint(updatedPoint);
+    this.#pointPresenters.get(updatedPoint.id).init(updatedPoint);
+  };
 
   #handleSortTypeChange = (sortType) => {
     if (this.#currentSortType === sortType) {
       return;
     }
-    this.#sortPoints(sortType);
+    this.#currentSortType = sortType;
     this.#clearPointsList();
     this.#renderPoints();
-  };
-
-  #handlePointDataChange = (updatedPoint) => {
-    this.#routePoints = this.#routePoints.map((point) => point.id === updatedPoint.id ? updatedPoint : point);
-    this.#pointPresenters.get(updatedPoint.id).init(updatedPoint);
   };
 
   #handlePointModeChange = (activePresenter) => {
@@ -104,13 +104,15 @@ export default class BoardPresenter {
   }
 
   #renderPoints() {
-    for (let i = 0; i < this.#routePoints.length; i++) {
-      this.#renderPoint(this.#routePoints[i]);
+    const pointsToRender = this.points;
+    for (let i = 0; i < pointsToRender.length; i++) {
+      this.#renderPoint(pointsToRender[i]);
     }
   }
 
   #renderBoard() {
-    if (this.#routePoints.length === 0 && !this.#emptyListComponent) { // Рисуем пустое, только если его еще нет
+    const currentPoints = this.points;
+    if (currentPoints.length === 0 && !this.#emptyListComponent) {
       if (this.#tripEventsList) {
         remove(this.#tripEventsList);
         this.#tripEventsList = null;
@@ -147,8 +149,8 @@ export default class BoardPresenter {
   #renderPoint(point) {
     const pointPresenter = new PointPresenter({
       pointListContainer: this.#tripEventsList,
-      destinations: this.#destinations,
-      offersByType: this.#offersByType,
+      destinations: this.destinations,
+      offersByType: this.offersByType,
       onDataChange: this.#handlePointDataChange,
       onModeChange: this.#handlePointModeChange,
     });
