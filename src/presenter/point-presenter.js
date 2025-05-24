@@ -33,11 +33,20 @@ export default class PointPresenter {
   init(point) {
     this.#point = point;
 
+    const pointDestinationObject = this.#destinations.find((dest) => dest.id === this.#point.destination);
+
+    const availableOffersForType = this.#offersByType[this.#point.type] || [];
+    const selectedPointOfferObjects = availableOffersForType.filter((offer) => this.#point.offers.includes(offer.id));
+
     const prevPointComponent = this.#pointComponent;
     const prevPointEditComponent = this.#pointEditComponent;
 
     this.#pointComponent = new PointView({
-      point: this.#point,
+      point: {
+        ...this.#point,
+        destination: pointDestinationObject,
+        selectedOffers: selectedPointOfferObjects,
+      },
       onEditClick: this.#handleEditClick,
       onFavoriteClick: this.#handleFavoriteClick,
     });
@@ -108,19 +117,35 @@ export default class PointPresenter {
     this.#replaceCardToForm();
   };
 
-  #handleFormSubmit = () => {
-    this.#replaceFormToCard();
+  #handleFormSubmit = async (pointFromForm) => {
+    try {
+      await this.#handleDataChange(UserAction.UPDATE_POINT, pointFromForm);
+      this.#replaceFormToCard();
+    } catch (err) {
+      // Оставляем форму открытой при ошибке
+    }
   };
 
-  #handleDeleteClick = () => {
-    this.#handleDataChange(UserAction.DELETE_POINT, this.#point);
+  #handleDeleteClick = async () => {
+    try {
+      await this.#handleDataChange(UserAction.DELETE_POINT, this.#point);
+    } catch (err) {
+      // Обработка ошибки удаления
+    }
   };
 
   #handleRollUpClick = () => {
     this.#replaceFormToCard();
   };
 
-  #handleFavoriteClick = () => {
-    this.#handleDataChange(UserAction.UPDATE_POINT, {...this.#point, isFavorite: !this.#point.isFavorite});
+  #handleFavoriteClick = async () => {
+    try {
+      await this.#handleDataChange(
+        UserAction.UPDATE_POINT,
+        {...this.#point, isFavorite: !this.#point.isFavorite}
+      );
+    } catch (err) {
+      // Обработка ошибки обновления статуса избранного
+    }
   };
 }

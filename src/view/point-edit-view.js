@@ -1,8 +1,8 @@
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
-import {TYPES} from '../mock/point.js';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import dayjs from 'dayjs';
+import { TYPES } from '../const.js';
 
 const createOffersTemplate = (availableOffers, selectedOffersIds) => {
   if (!availableOffers || !availableOffers.length) {
@@ -120,14 +120,26 @@ export default class PointEditView extends AbstractStatefulView {
   #datepickerFrom = null;
   #datepickerTo = null;
 
+  static parsePointToState(point, allDestinations) {
+    const state = structuredClone(point);
+
+    if (typeof state.destination === 'number' || typeof state.destination === 'string') {
+      state.destination = allDestinations.find((dest) => dest.id === state.destination) || null;
+    }
+
+    return {
+      ...state,
+    };
+  }
+
   constructor({point, onFormSubmit, onRollUpClick, onDeleteClick, destinations, offersByType}) {
     super();
-    this._state = PointEditView.parsePointToState(point);
+    this.#allDestinations = destinations;
+    this.#allOffersByType = offersByType;
+    this._state = PointEditView.parsePointToState(point, this.#allDestinations, this.#allOffersByType);
     this.#handleFormSubmit = onFormSubmit;
     this.#handleRollUpClick = onRollUpClick;
     this.#handleDeleteClick = onDeleteClick;
-    this.#allDestinations = destinations;
-    this.#allOffersByType = offersByType;
 
     this._restoreHandlers();
   }
@@ -295,14 +307,7 @@ export default class PointEditView extends AbstractStatefulView {
   };
 
   reset(point) {
-    this.updateElement(PointEditView.parsePointToState(point));
-  }
-
-  static parsePointToState(point) {
-    return {
-      ...structuredClone(point),
-      basePrice: point.basePrice !== undefined ? Number(point.basePrice) : 0,
-    };
+    this.updateElement(PointEditView.parsePointToState(point, this.#allDestinations, this.#allOffersByType));
   }
 
   static parseStateToPoint(state) {

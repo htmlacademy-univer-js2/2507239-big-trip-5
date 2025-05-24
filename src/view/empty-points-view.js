@@ -15,9 +15,13 @@ const createEmptyPointsTemplate = (message) => (
 export default class EmptyPointsView extends AbstractView {
   #message = null;
 
-  constructor({messageType = FilterType.EVERYTHING} = {}) {
+  constructor({messageType = FilterType.EVERYTHING, customMessage = null} = {}) {
     super();
-    this.#message = EmptyListMessages[messageType] || EmptyListMessages[FilterType.EVERYTHING];
+    if (customMessage !== null) {
+      this.#message = customMessage;
+    } else {
+      this.#message = EmptyListMessages[messageType] || EmptyListMessages[FilterType.EVERYTHING];
+    }
   }
 
   get template() {
