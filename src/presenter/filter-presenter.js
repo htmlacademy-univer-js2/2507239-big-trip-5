@@ -21,11 +21,15 @@ export default class FilterPresenter {
 
   get filters() {
     const points = this.#pointsModel.points;
-    return Object.values(FilterType).map((type) => ({
-      type,
-      name: type.charAt(0).toUpperCase() + type.slice(1),
-      count: filter[type](points).length,
-    }));
+    return Object.values(FilterType).map((type) => {
+      const filteredPoints = filter[type](points);
+      return {
+        type,
+        name: type.charAt(0).toUpperCase() + type.slice(1),
+        count: filteredPoints.length,
+        isDisabled: type !== FilterType.EVERYTHING && filteredPoints.length === 0,
+      };
+    });
   }
 
   init() {
