@@ -270,13 +270,18 @@ export default class PointEditView extends AbstractStatefulView {
   };
 
   #offerChangeHandler = (evt) => {
-    evt.preventDefault();
     if (evt.target.classList.contains('event__offer-checkbox')) {
-      const offerId = Number(evt.target.dataset.offerId);
-      const currentOffers = this._state.offers.includes(offerId)
-        ? this._state.offers.filter((id) => id !== offerId)
-        : [...this._state.offers, offerId];
-      this.updateElement({ offers: currentOffers });
+      const offerId = evt.target.dataset.offerId;
+      let updatedOffers = [...this._state.offers];
+
+      if (evt.target.checked) {
+        if (!updatedOffers.includes(offerId)) {
+          updatedOffers.push(offerId);
+        }
+      } else {
+        updatedOffers = updatedOffers.filter((id) => id !== offerId);
+      }
+      this.updateElement({ offers: updatedOffers });
     }
   };
 

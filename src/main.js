@@ -27,6 +27,17 @@ const filterPresenter = new FilterPresenter({
   filtersModel: filtersModel,
 });
 
+const newEventButton = document.querySelector('.trip-main__event-add-btn');
+
 filterPresenter.init();
 boardPresenter.init();
-pointsModel.init();
+pointsModel.init()
+  .finally(() => {
+    if (newEventButton) {
+      newEventButton.disabled = false;
+      newEventButton.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        boardPresenter.createPoint();
+      });
+    }
+  });
