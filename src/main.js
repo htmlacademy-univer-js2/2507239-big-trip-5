@@ -4,12 +4,14 @@ import PointsModel from './model/points-model.js';
 import FiltersModel from './model/filters-model.js';
 import TripApiService from './trip-api-service.js';
 import UiBlocker from './framework/ui-blocker/ui-blocker.js';
+import TripInfoPresenter from './presenter/trip-info-presenter.js';
 
 const AUTHORIZATION = 'Basic hS2sfS44wcl1sa2j';
 const END_POINT = 'https://24.objects.htmlacademy.pro/big-trip';
 
 const siteMainElement = document.querySelector('.trip-events');
 const siteHeaderElement = document.querySelector('.trip-controls__filters');
+const siteTripMainElement = document.querySelector('.trip-main');
 
 const TimeLimit = {
   LOWER_LIMIT: 350,
@@ -38,9 +40,15 @@ const filterPresenter = new FilterPresenter({
   filtersModel: filtersModel,
 });
 
+const tripInfoPresenter = new TripInfoPresenter({
+  tripMainContainer: siteTripMainElement,
+  pointsModel: pointsModel
+});
+
 const newEventButton = document.querySelector('.trip-main__event-add-btn');
 
 filterPresenter.init();
+tripInfoPresenter.init();
 boardPresenter.init();
 pointsModel.init()
   .finally(() => {
