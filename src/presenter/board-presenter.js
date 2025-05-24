@@ -22,11 +22,13 @@ export default class BoardPresenter {
   #isLoading = true;
   #newPointFormComponent = null;
   #isCreatingNewPoint = false;
+  #uiBlocker = null;
 
-  constructor({boardContainer, pointsModel, filtersModel}) {
+  constructor({boardContainer, pointsModel, filtersModel, uiBlocker}) {
     this.#boardContainer = boardContainer;
     this.#pointsModel = pointsModel;
     this.#filtersModel = filtersModel;
+    this.#uiBlocker = uiBlocker;
 
     this.#pointsModel.addObserver(this.#handleModelEvent);
     this.#filtersModel.addObserver(this.#handleModelEvent);
@@ -92,10 +94,17 @@ export default class BoardPresenter {
   }
 
   #handleNewPointFormSubmit = async (pointData) => {
+    this.#newPointFormComponent.updateElement({ isDisabled: true, isSaving: true, isShake: false });
     try {
       await this.#handleViewAction(UserAction.ADD_POINT, pointData);
     } catch (err) {
-      // Оставляем форму открытой при ошибке
+      if (this.#newPointFormComponent && this.#newPointFormComponent.element && document.body.contains(this.#newPointFormComponent.element)) {
+        this.#newPointFormComponent.shake(() => {
+          if (this.#newPointFormComponent && this.#newPointFormComponent.element && document.body.contains(this.#newPointFormComponent.element)) {
+            this.#newPointFormComponent.updateElement({ isDisabled: false, isSaving: false });
+          }
+        });
+      }
     }
   };
 
@@ -131,16 +140,50 @@ export default class BoardPresenter {
   };
 
   #handleViewAction = async (actionType, update) => {
-    switch (actionType) {
-      case UserAction.UPDATE_POINT:
-        await this.#pointsModel.updatePoint(update);
-        break;
-      case UserAction.ADD_POINT:
-        await this.#pointsModel.addPoint(update);
-        break;
-      case UserAction.DELETE_POINT:
-        await this.#pointsModel.deletePoint(update);
-        break;
+    this.#uiBlocker.block();
+
+    let success = false;
+
+    try {
+      switch (actionType) {
+        case UserAction.UPDATE_POINT:
+          this.#pointPresenters.get(update.id)?.setSaving();
+          try {
+            await this.#pointsModel.updatePoint(update);
+            success = true;
+          } catch (errInternal) {
+            this.#pointPresenters.get(update.id)?.setAborting();
+          }
+          break;
+        case UserAction.ADD_POINT:
+          this.#newPointFormComponent?.updateElement({ isDisabled: true, isSaving: true, isShake: false });
+          try {
+            await this.#pointsModel.addPoint(update);
+            success = true;
+          } catch (errInternal) {
+            this.#newPointFormComponent?.shake(() => {
+              this.#newPointFormComponent.updateElement({ isDisabled: false, isSaving: false });
+            });
+          }
+          break;
+        case UserAction.DELETE_POINT:
+          this.#pointPresenters.get(update.id)?.setDeleting();
+          try {
+            await this.#pointsModel.deletePoint(update);
+            success = true;
+          } catch (errInternal) {
+            this.#pointPresenters.get(update.id)?.setAborting();
+          }
+          break;
+      }
+    } catch (errOuter) {
+      // console.error('[BoardPresenter] #handleViewAction - Outer logic or UI method error:', errOuter);
+    } finally {
+      this.#uiBlocker.unblock();
+    }
+
+    if (!success && actionType === UserAction.UPDATE_POINT && update.isFavorite !== undefined) {
+      // Дополнительная проверка для обновления Favorite
     }
   };
 

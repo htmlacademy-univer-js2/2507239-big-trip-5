@@ -4,17 +4,16 @@ import 'flatpickr/dist/flatpickr.min.css';
 import dayjs from 'dayjs';
 import { TYPES } from '../const.js';
 
-const createOffersTemplate = (availableOffers, selectedOffersIds) => {
+const createOffersTemplate = (availableOffers, selectedOffersIds, isDisabled) => {
   if (!availableOffers || !availableOffers.length) {
     return '';
   }
-
   return `<section class="event__section  event__section--offers">
     <h3 class="event__section-title  event__section-title--offers">Offers</h3>
     <div class="event__available-offers">
       ${availableOffers.map((offer) => `
         <div class="event__offer-selector">
-          <input class="event__offer-checkbox  visually-hidden" id="event-offer-${offer.id}" type="checkbox" name="event-offer-${offer.id}" data-offer-id="${offer.id}" ${selectedOffersIds.includes(offer.id) ? 'checked' : ''}>
+          <input class="event__offer-checkbox  visually-hidden" id="event-offer-${offer.id}" type="checkbox" name="event-offer-${offer.id}" data-offer-id="${offer.id}" ${selectedOffersIds.includes(offer.id) ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
           <label class="event__offer-label" for="event-offer-${offer.id}">
             <span class="event__offer-title">${offer.title}</span>
             +€
@@ -53,20 +52,31 @@ const createPointEditTemplate = (_state, destinationsList, offersByType) => {
 
   const formatForFlatpickr = (dateString) => dateString ? dayjs(dateString).format('DD/MM/YY HH:mm') : '';
 
-  return `<form class="event event--edit" action="#" method="post">
+  let resetButtonText;
+  if (_state.isDeleting) {
+    resetButtonText = 'Deleting...';
+  } else {
+    if (_state.id !== undefined) {
+      resetButtonText = 'Delete';
+    } else {
+      resetButtonText = 'Cancel';
+    }
+  }
+
+  return `<form class="event event--edit ${_state.isShake ? 'shake' : ''}" action="#" method="post">
     <header class="event__header">
       <div class="event__type-wrapper">
         <label class="event__type  event__type-btn" for="event-type-toggle-1">
           <span class="visually-hidden">Choose event type</span>
           <img class="event__type-icon" width="17" height="17" src="img/icons/${_state.type}.png" alt="Event type icon">
         </label>
-        <input class="event__type-toggle  visually-hidden" id="event-type-toggle-1" type="checkbox">
+        <input class="event__type-toggle  visually-hidden" id="event-type-toggle-1" type="checkbox" ${_state.isDisabled ? 'disabled' : ''}>
         <div class="event__type-list">
           <fieldset class="event__type-group">
             <legend class="visually-hidden">Event type</legend>
             ${TYPES.map((type) => `
               <div class="event__type-item">
-                <input id="event-type-${type}-1" class="event__type-input  visually-hidden" type="radio" name="event-type" value="${type}" ${type === _state.type ? 'checked' : ''}>
+                <input id="event-type-${type}-1" class="event__type-input  visually-hidden" type="radio" name="event-type" value="${type}" ${type === _state.type ? 'checked' : ''} ${_state.isDisabled ? 'disabled' : ''}>
                 <label class="event__type-label  event__type-label--${type}" for="event-type-${type}-1">${type}</label>
               </div>
             `).join('')}
@@ -78,7 +88,7 @@ const createPointEditTemplate = (_state, destinationsList, offersByType) => {
         <label class="event__label  event__type-output" for="event-destination-1">
           ${_state.type}
         </label>
-        <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" value="${currentDestination ? currentDestination.name : ''}" list="destination-list-1">
+        <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" value="${currentDestination ? currentDestination.name : ''}" list="destination-list-1" ${_state.isDisabled ? 'disabled' : ''}>
         <datalist id="destination-list-1">
           ${destinationsList.map((dest) => `<option value="${dest.name}"></option>`).join('')}
         </datalist>
@@ -86,10 +96,10 @@ const createPointEditTemplate = (_state, destinationsList, offersByType) => {
 
       <div class="event__field-group  event__field-group--time">
         <label class="visually-hidden" for="event-start-time-1">From</label>
-        <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${formatForFlatpickr(_state.dateFrom)}">
+        <input class="event__input  event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${formatForFlatpickr(_state.dateFrom)}" ${_state.isDisabled ? 'disabled' : ''}>
         —
         <label class="visually-hidden" for="event-end-time-1">To</label>
-        <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${formatForFlatpickr(_state.dateTo)}">
+        <input class="event__input  event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${formatForFlatpickr(_state.dateTo)}" ${_state.isDisabled ? 'disabled' : ''}>
       </div>
 
       <div class="event__field-group  event__field-group--price">
@@ -97,16 +107,20 @@ const createPointEditTemplate = (_state, destinationsList, offersByType) => {
           <span class="visually-hidden">Price</span>
           €
         </label>
-        <input class="event__input  event__input--price" id="event-price-1" type="number" name="event-price" value="${_state.basePrice}" min="0">
+        <input class="event__input  event__input--price" id="event-price-1" type="number" name="event-price" value="${_state.basePrice}" min="0" ${_state.isDisabled ? 'disabled' : ''}>
       </div>
 
-      <button class="event__save-btn  btn  btn--blue" type="submit">Save</button>
-      <button class="event__reset-btn" type="reset">${_state.id !== undefined ? 'Delete' : 'Cancel'}</button>
-      <button class="event__rollup-btn" type="button">
+      <button class="event__save-btn  btn  btn--blue" type="submit" ${_state.isDisabled ? 'disabled' : ''}>
+        ${_state.isSaving ? 'Saving...' : 'Save'}
+      </button>
+      <button class="event__reset-btn" type="reset" ${_state.isDisabled ? 'disabled' : ''}>
+        ${resetButtonText}
+      </button>
+      <button class="event__rollup-btn" type="button" ${_state.isDisabled ? 'disabled' : ''}>
         <span class="visually-hidden">Open event</span>
       </button>
     </header>
-    ${createOffersTemplate(availableOffers, _state.offers)}
+    ${createOffersTemplate(availableOffers, _state.offers, _state.isDisabled)}
     ${createDestinationTemplate(currentDestination)}
   </form>`;
 };
@@ -122,13 +136,15 @@ export default class PointEditView extends AbstractStatefulView {
 
   static parsePointToState(point, allDestinations) {
     const state = structuredClone(point);
-
     if (typeof state.destination === 'number' || typeof state.destination === 'string') {
       state.destination = allDestinations.find((dest) => dest.id === state.destination) || null;
     }
-
     return {
       ...state,
+      isDisabled: false,
+      isSaving: false,
+      isDeleting: false,
+      isShake: false,
     };
   }
 
@@ -161,6 +177,9 @@ export default class PointEditView extends AbstractStatefulView {
   }
 
   _restoreHandlers() {
+    if (this._state.isDisabled) {
+      return;
+    }
     this.element.addEventListener('submit', this.#formSubmitHandler);
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#rollUpClickHandler);
     this.element.querySelector('.event__type-group').addEventListener('change', this.#typeChangeHandler);
@@ -315,8 +334,22 @@ export default class PointEditView extends AbstractStatefulView {
     this.updateElement(PointEditView.parsePointToState(point, this.#allDestinations, this.#allOffersByType));
   }
 
+  shake(callback) {
+    this.element.classList.add('shake');
+    setTimeout(() => {
+      this.element.classList.remove('shake');
+      if (callback) {
+        callback();
+      }
+    }, 600);
+  }
+
   static parseStateToPoint(state) {
     const point = {...state};
+    delete point.isDisabled;
+    delete point.isSaving;
+    delete point.isDeleting;
+    delete point.isShake;
     return point;
   }
 }

@@ -21,6 +21,7 @@ export default class PointPresenter {
   #handleDataChange = null;
   #handleModeChange = null;
 
+  _isFavoriteUpdating = false;
 
   constructor({pointListContainer, destinations, offersByType, onDataChange, onModeChange}) {
     this.#pointListContainer = pointListContainer;
@@ -139,13 +140,65 @@ export default class PointPresenter {
   };
 
   #handleFavoriteClick = async () => {
+    if (this._isFavoriteUpdating) {
+      return;
+    }
+    this._isFavoriteUpdating = true;
+
+    const originalIsFavorite = this.#point.isFavorite;
+
     try {
       await this.#handleDataChange(
         UserAction.UPDATE_POINT,
         {...this.#point, isFavorite: !this.#point.isFavorite}
       );
     } catch (err) {
-      // Обработка ошибки обновления статуса избранного
+      if (this.#pointComponent && typeof this.#pointComponent.updateElement === 'function') {
+        this.#pointComponent.updateElement({
+          isFavorite: originalIsFavorite,
+          isFavoriteProcessing: false
+        });
+      }
+    } finally {
+      this._isFavoriteUpdating = false;
     }
   };
+
+  setSaving() {
+    if (this.#mode === Mode.EDITING && this.#pointEditComponent) {
+      this.#pointEditComponent.updateElement({
+        isDisabled: true,
+        isSaving: true,
+        isShake: false,
+      });
+    }
+  }
+
+  setDeleting() {
+    if (this.#mode === Mode.EDITING && this.#pointEditComponent) {
+      this.#pointEditComponent.updateElement({
+        isDisabled: true,
+        isDeleting: true,
+        isShake: false,
+      });
+    }
+  }
+
+  setAborting() {
+    if (this.#mode === Mode.EDITING && this.#pointEditComponent) {
+      const resetFormState = () => {
+        if (this.#pointEditComponent && this.#pointEditComponent.element && document.body.contains(this.#pointEditComponent.element)) {
+          this.#pointEditComponent.updateElement({
+            isDisabled: false,
+            isSaving: false,
+            isDeleting: false,
+            isShake: false,
+          });
+        }
+      };
+      if (this.#pointEditComponent.element && document.body.contains(this.#pointEditComponent.element)) {
+        this.#pointEditComponent.shake(resetFormState);
+      }
+    }
+  }
 }
