@@ -6,6 +6,7 @@ export default class PointsModel extends Observable {
   #points = [];
   #destinations = [];
   #offersByType = [];
+  #isLoadFailed = false;
 
   constructor({apiService}) {
     super();
@@ -32,7 +33,12 @@ export default class PointsModel extends Observable {
     return this.#offersByType;
   }
 
+  get isLoadFailed() {
+    return this.#isLoadFailed;
+  }
+
   async init() {
+    this.#isLoadFailed = false;
     try {
       const [points, destinations, offers] = await Promise.all([
         this.#apiService.getPoints(),
@@ -43,11 +49,11 @@ export default class PointsModel extends Observable {
       this.#points = points.map(this.#adaptPointToClient);
       this.#destinations = destinations;
       this.#offersByType = offers;
-
     } catch(err) {
       this.#points = [];
       this.#destinations = [];
       this.#offersByType = [];
+      this.#isLoadFailed = true;
     }
     this._notify(UpdateType.INIT);
   }
@@ -70,11 +76,22 @@ export default class PointsModel extends Observable {
   }
 
   async updatePoint(point) {
-    const index = this.#points.findIndex((p) => p.id === point.id);
-    if (index !== -1) {
-      this.#points[index] = point;
-      this._notify(UpdateType.PATCH, point);
+    const updatedPointFromServer = await this.#apiService.updatePoint(point);
+    const adaptedPoint = this.#adaptPointToClient(updatedPointFromServer);
+
+    const index = this.#points.findIndex((p) => p.id === adaptedPoint.id);
+
+    if (index === -1) {
+      throw new Error('Can\'t update unexisting point in local model');
     }
+
+    this.#points = [
+      ...this.#points.slice(0, index),
+      adaptedPoint,
+      ...this.#points.slice(index + 1),
+    ];
+    this._notify(UpdateType.PATCH, adaptedPoint);
+    return adaptedPoint;
   }
 
   addPoint(point) {

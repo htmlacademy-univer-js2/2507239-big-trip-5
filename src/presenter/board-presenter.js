@@ -163,10 +163,19 @@ export default class BoardPresenter {
   }
 
   #renderEmptyList() {
-    const filterType = this.#filtersModel.filter;
-    this.#emptyListComponent = new EmptyPointsView({
-      messageType: filterType
-    });
+    const ERROR_LOAD_MESSAGE = 'Failed to load latest route information';
+    let messageToShow;
+
+    if (this.#pointsModel.isLoadFailed) {
+      messageToShow = ERROR_LOAD_MESSAGE;
+    }
+
+    if (messageToShow) {
+      this.#emptyListComponent = new EmptyPointsView({ customMessage: messageToShow });
+    } else {
+      this.#emptyListComponent = new EmptyPointsView({ messageType: this.#filtersModel.filter });
+    }
+
     render(this.#emptyListComponent, this.#boardContainer);
   }
 
