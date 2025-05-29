@@ -218,8 +218,8 @@ export default class BoardPresenter {
       return;
     }
     this.#currentSortType = sortType;
-    this.#clearPointsList();
-    this.#renderPoints();
+    this.#clearBoard({resetSortType: false});
+    this.#renderBoard();
   };
 
   #handlePointModeChange = (activePresenter) => {
