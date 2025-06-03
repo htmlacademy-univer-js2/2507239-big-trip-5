@@ -27,5 +27,5 @@ export const BLANK_POINT = {
   destination: null,
   isFavorite: false,
   offers: [],
-  type: 'taxi',
+  type: 'flight',
 };

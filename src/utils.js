@@ -90,6 +90,25 @@ const filter = {
   [FilterType.PAST]: (points) => points.filter((point) => dayjs(point.dateTo).isBefore(now)),
 };
 
+export const escapeHtml = (unsafe) => {
+  if (unsafe === null || typeof unsafe === 'undefined') {
+    return '';
+  }
+  if (typeof unsafe === 'number') {
+    return String(unsafe);
+  }
+  if (typeof unsafe !== 'string') {
+    unsafe = String(unsafe);
+  }
+
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
 export {
   getRandomInteger,
   sortPointsByDay,

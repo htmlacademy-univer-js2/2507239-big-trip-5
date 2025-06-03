@@ -334,16 +334,6 @@ export default class PointEditView extends AbstractStatefulView {
     this.updateElement(PointEditView.parsePointToState(point, this.#allDestinations, this.#allOffersByType));
   }
 
-  shake(callback) {
-    this.element.classList.add('shake');
-    setTimeout(() => {
-      this.element.classList.remove('shake');
-      if (callback) {
-        callback();
-      }
-    }, 600);
-  }
-
   static parseStateToPoint(state) {
     const point = {...state};
     delete point.isDisabled;
