@@ -17,7 +17,6 @@ export default class BoardPresenter {
   #emptyListComponent = null;
   #pointPresenters = new Map();
   #currentSortType = SortType.DAY;
-  #newPointPresenter = null;
   #loadingComponent = null;
   #isLoading = true;
   #newPointFormComponent = null;
@@ -142,48 +141,40 @@ export default class BoardPresenter {
   #handleViewAction = async (actionType, update) => {
     this.#uiBlocker.block();
 
-    let success = false;
-
     try {
       switch (actionType) {
         case UserAction.UPDATE_POINT:
           this.#pointPresenters.get(update.id)?.setSaving();
           try {
             await this.#pointsModel.updatePoint(update);
-            success = true;
           } catch (errInternal) {
             this.#pointPresenters.get(update.id)?.setAborting();
+            throw errInternal;
           }
           break;
         case UserAction.ADD_POINT:
           this.#newPointFormComponent?.updateElement({ isDisabled: true, isSaving: true, isShake: false });
           try {
             await this.#pointsModel.addPoint(update);
-            success = true;
           } catch (errInternal) {
             this.#newPointFormComponent?.shake(() => {
               this.#newPointFormComponent.updateElement({ isDisabled: false, isSaving: false });
             });
+            throw errInternal;
           }
           break;
         case UserAction.DELETE_POINT:
           this.#pointPresenters.get(update.id)?.setDeleting();
           try {
             await this.#pointsModel.deletePoint(update);
-            success = true;
           } catch (errInternal) {
             this.#pointPresenters.get(update.id)?.setAborting();
+            throw errInternal;
           }
           break;
       }
-    } catch (errOuter) {
-      // console.error('[BoardPresenter] #handleViewAction - Outer logic or UI method error:', errOuter);
     } finally {
       this.#uiBlocker.unblock();
-    }
-
-    if (!success && actionType === UserAction.UPDATE_POINT && update.isFavorite !== undefined) {
-      // Дополнительная проверка для обновления Favorite
     }
   };
 
@@ -209,10 +200,6 @@ export default class BoardPresenter {
     }
   };
 
-  #handlePointDataChange = (updatedPoint) => {
-    this.#pointsModel.updatePoint(updatedPoint);
-  };
-
   #handleSortTypeChange = (sortType) => {
     if (this.#currentSortType === sortType) {
       return;
@@ -223,6 +210,10 @@ export default class BoardPresenter {
   };
 
   #handlePointModeChange = (activePresenter) => {
+    if (this.#newPointFormComponent) {
+      this.#handleNewPointFormClose();
+    }
+
     this.#pointPresenters.forEach((presenter) => {
       if (presenter !== activePresenter) {
         presenter.resetView();
@@ -308,7 +299,7 @@ export default class BoardPresenter {
 
     const points = this.points;
 
-    if (points.length === 0 && !this.#newPointPresenter) {
+    if (points.length === 0) {
       this.#clearPointsList();
       if (this.#tripEventsList) {
         remove(this.#tripEventsList);

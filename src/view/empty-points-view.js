@@ -1,5 +1,6 @@
 import AbstractView from '../framework/view/abstract-view.js';
 import {FilterType} from '../const.js';
+import { escapeHtml } from '../utils.js';
 
 const EmptyListMessages = {
   [FilterType.EVERYTHING]: 'Click New Event to create your first point',
@@ -9,7 +10,7 @@ const EmptyListMessages = {
 };
 
 const createEmptyPointsTemplate = (message) => (
-  `<p class="trip-events__msg">${message}</p>`
+  `<p class="trip-events__msg">${escapeHtml(message)}</p>`
 );
 
 export default class EmptyPointsView extends AbstractView {

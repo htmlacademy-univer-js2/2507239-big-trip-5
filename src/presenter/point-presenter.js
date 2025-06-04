@@ -100,6 +100,10 @@ export default class PointPresenter {
   };
 
   #replaceFormToCard = () => {
+    if (this.#pointEditComponent) {
+      this.#pointEditComponent.reset(this.#point);
+    }
+
     if (this.#pointEditComponent && this.#pointEditComponent.element.parentElement) {
       replace(this.#pointComponent, this.#pointEditComponent);
     }

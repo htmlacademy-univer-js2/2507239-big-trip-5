@@ -29,8 +29,6 @@ export default class TripInfoPresenter {
     if (this.#pointsModel) {
       this.#pointsModel.addObserver(this.#handleModelEvent);
       this.#renderTripInfo();
-    } else {
-    //   console.error('TripInfoPresenter: PointsModel is not provided to constructor or init!');
     }
   }
 
@@ -136,7 +134,7 @@ export default class TripInfoPresenter {
   #handleModelEvent = () => {
     if (!this.#pointsModel) {
       return;
-    } // Дополнительная проверка
+    }
     this.#renderTripInfo();
   };
 }
