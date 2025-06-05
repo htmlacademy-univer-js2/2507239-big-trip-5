@@ -104,6 +104,13 @@ export const escapeHtml = (unsafe) => {
     .replace(/'/g, '&#039;');
 };
 
+export const isValidImageUrl = (url) => {
+  if (typeof url !== 'string') {
+    return false;
+  }
+  return url.startsWith('http://') || url.startsWith('https://') || (!url.startsWith('//') && !url.includes(':'));
+};
+
 export {
   sortPointsByDay,
   sortPointsByTime,

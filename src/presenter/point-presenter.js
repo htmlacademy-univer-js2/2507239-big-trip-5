@@ -151,6 +151,10 @@ export default class PointPresenter {
 
     const originalIsFavorite = this.#point.isFavorite;
 
+    if (this.#pointComponent && typeof this.#pointComponent.updateElement === 'function') {
+      this.#pointComponent.updateElement({ isFavoriteProcessing: true });
+    }
+
     try {
       await this.#handleDataChange(
         UserAction.UPDATE_POINT,
@@ -162,6 +166,7 @@ export default class PointPresenter {
           isFavorite: originalIsFavorite,
           isFavoriteProcessing: false
         });
+        this.#pointComponent.shake();
       }
     } finally {
       this._isFavoriteUpdating = false;

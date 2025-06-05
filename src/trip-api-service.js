@@ -57,7 +57,9 @@ export default class TripApiService extends ApiService {
       'date_from': point.dateFrom,
       'date_to': point.dateTo,
       'is_favorite': point.isFavorite,
-      destination: (typeof point.destination === 'object' && point.destination !== null) ? point.destination.id : point.destination,
+      destination: (point.destination && typeof point.destination === 'object' && point.destination.id !== undefined)
+        ? point.destination.id
+        : point.destination,
       offers: point.offers,
     };
 

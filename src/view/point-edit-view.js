@@ -3,7 +3,7 @@ import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import dayjs from 'dayjs';
 import { TYPES } from '../const.js';
-import { escapeHtml } from '../utils.js';
+import { escapeHtml, isValidImageUrl } from '../utils.js';
 
 const createOffersTemplate = (availableOffers, selectedOffersIds, isDisabled) => {
   if (!availableOffers || !availableOffers.length) {
@@ -34,7 +34,7 @@ const createDestinationTemplate = (destination) => {
     ? `<div class="event__photos-container">
         <div class="event__photos-tape">
           ${destination.pictures.map((picture) => `
-            <img class="event__photo" src="${escapeHtml(picture.src)}" alt="${escapeHtml(picture.description)}">
+            <img class="event__photo" src="${isValidImageUrl(picture.src) ? picture.src : ''}" alt="${escapeHtml(picture.description)}">
           `).join('')}
         </div>
       </div>`
