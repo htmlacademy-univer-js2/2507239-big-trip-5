@@ -22,10 +22,10 @@ export const TYPES = ['taxi', 'bus', 'train', 'ship', 'drive', 'flight', 'check-
 
 export const BLANK_POINT = {
   basePrice: 0,
-  dateFrom: new Date().toISOString(),
-  dateTo: new Date().toISOString(),
+  dateFrom: null,
+  dateTo: null,
   destination: null,
   isFavorite: false,
   offers: [],
-  type: 'taxi',
+  type: 'flight',
 };

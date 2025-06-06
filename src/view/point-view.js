@@ -1,5 +1,5 @@
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
-import { formatDateToMonthDay, formatTimeToHourMinute, formatDuration } from '../utils.js';
+import { formatDateToMonthDay, formatTimeToHourMinute, formatDuration, escapeHtml } from '../utils.js';
 
 const createPointTemplate = (point) => {
   const destinationName = point.destination?.name || 'Unknown destination';
@@ -12,29 +12,29 @@ const createPointTemplate = (point) => {
 
   return `<li class="trip-events__item">
     <div class="event">
-      <time class="event__date" datetime="${point.dateFrom}">${dateForHeader}</time>
+      <time class="event__date" datetime="${escapeHtml(point.dateFrom)}">${escapeHtml(dateForHeader)}</time>
       <div class="event__type">
-        <img class="event__type-icon" width="42" height="42" src="img/icons/${point.type}.png" alt="Event type icon">
+        <img class="event__type-icon" width="42" height="42" src="img/icons/${escapeHtml(point.type)}.png" alt="Event type icon">
       </div>
-      <h3 class="event__title">${point.type} ${destinationName}</h3>
+      <h3 class="event__title">${escapeHtml(point.type)} ${escapeHtml(destinationName)}</h3>
       <div class="event__schedule">
         <p class="event__time">
-          <time class="event__start-time" datetime="${point.dateFrom}">${timeFrom}</time>
+          <time class="event__start-time" datetime="${escapeHtml(point.dateFrom)}">${escapeHtml(timeFrom)}</time>
           —
-          <time class="event__end-time" datetime="${point.dateTo}">${timeTo}</time>
+          <time class="event__end-time" datetime="${escapeHtml(point.dateTo)}">${escapeHtml(timeTo)}</time>
         </p>
-        <p class="event__duration">${duration}</p>
+        <p class="event__duration">${escapeHtml(duration)}</p>
       </div>
       <p class="event__price">
-        &euro;&nbsp;<span class="event__price-value">${point.basePrice}</span>
+        &euro;&nbsp;<span class="event__price-value">${escapeHtml(point.basePrice)}</span>
       </p>
       <h4 class="visually-hidden">Offers:</h4>
       <ul class="event__selected-offers">
         ${selectedOffers.map((offer) => `
           <li class="event__offer">
-            <span class="event__offer-title">${offer.title}</span>
+            <span class="event__offer-title">${escapeHtml(offer.title)}</span>
             +€
-            <span class="event__offer-price">${offer.price}</span>
+            <span class="event__offer-price">${escapeHtml(offer.price)}</span>
           </li>
         `).join('')}
       </ul>
@@ -52,14 +52,14 @@ const createPointTemplate = (point) => {
 };
 
 export default class PointView extends AbstractStatefulView {
-  #handleEditClick = null;
-  #handleFavoriteClick = null;
+  #onEditClickCallback = null;
+  #onFavoriteClickCallback = null;
 
   constructor({point, onEditClick, onFavoriteClick}) {
     super();
     this._state = PointView.parsePointToState(point);
-    this.#handleEditClick = onEditClick;
-    this.#handleFavoriteClick = onFavoriteClick;
+    this.#onEditClickCallback = onEditClick;
+    this.#onFavoriteClickCallback = onFavoriteClick;
 
     this.#setHandlers();
   }
@@ -72,27 +72,32 @@ export default class PointView extends AbstractStatefulView {
     this.#setHandlers();
   }
 
-  #setHandlers() {
-    this.element.querySelector('.event__rollup-btn')
-      .addEventListener('click', this.#editClickHandler);
-    this.element.querySelector('.event__favorite-btn')
-      .addEventListener('click', this.#favoriteClickHandler);
-  }
-
-  #editClickHandler = (evt) => {
+  #editButtonClickHandler = (evt) => {
     evt.preventDefault();
-    this.#handleEditClick();
+    if (this.#onEditClickCallback) {
+      this.#onEditClickCallback();
+    }
   };
 
-  #favoriteClickHandler = (evt) => {
+  #favoriteButtonClickHandler = (evt) => {
     evt.preventDefault();
 
     if (this._state.isFavoriteProcessing) {
       return;
     }
     this.updateElement({ isFavoriteProcessing: true });
-    this.#handleFavoriteClick();
+
+    if (this.#onFavoriteClickCallback) {
+      this.#onFavoriteClickCallback();
+    }
   };
+
+  #setHandlers() {
+    this.element.querySelector('.event__rollup-btn')
+      .addEventListener('click', this.#editButtonClickHandler);
+    this.element.querySelector('.event__favorite-btn')
+      .addEventListener('click', this.#favoriteButtonClickHandler);
+  }
 
   static parsePointToState(point) {
     return {

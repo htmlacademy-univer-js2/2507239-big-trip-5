@@ -1,13 +1,14 @@
 import AbstractView from '../framework/view/abstract-view.js';
+import { escapeHtml } from '../utils.js';
 
 const createTripInfoTemplate = (title, dates, totalCost) => (
   `<section class="trip-main__trip-info  trip-info">
     <div class="trip-info__main">
-      <h1 class="trip-info__title">${title}</h1>
-      <p class="trip-info__dates">${dates}</p>
+      <h1 class="trip-info__title">${escapeHtml(title)}</h1>
+      <p class="trip-info__dates">${escapeHtml(dates)}</p>
     </div>
     <p class="trip-info__cost">
-      Total: €&nbsp;<span class="trip-info__cost-value">${totalCost}</span>
+      Total: €&nbsp;<span class="trip-info__cost-value">${escapeHtml(totalCost)}</span>
     </p>
   </section>`
 );

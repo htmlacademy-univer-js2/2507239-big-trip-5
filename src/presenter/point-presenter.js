@@ -18,17 +18,17 @@ export default class PointPresenter {
   #pointComponent = null;
   #pointEditComponent = null;
   #mode = Mode.DEFAULT;
-  #handleDataChange = null;
-  #handleModeChange = null;
+  #onDataChangeCallback = null;
+  #onModeChangeCallback = null;
 
   _isFavoriteUpdating = false;
 
-  constructor({pointListContainer, destinations, offersByType, onDataChange, onModeChange}) {
+  constructor({pointListContainer, destinations, offersByType, onDataChangeCallback, onModeChangeCallback}) {
     this.#pointListContainer = pointListContainer;
     this.#destinations = destinations;
     this.#offersByType = offersByType;
-    this.#handleDataChange = onDataChange;
-    this.#handleModeChange = onModeChange;
+    this.#onDataChangeCallback = onDataChangeCallback;
+    this.#onModeChangeCallback = onModeChangeCallback;
   }
 
   init(point) {
@@ -48,17 +48,17 @@ export default class PointPresenter {
         destination: pointDestinationObject,
         selectedOffers: selectedPointOfferObjects,
       },
-      onEditClick: this.#handleEditClick,
-      onFavoriteClick: this.#handleFavoriteClick,
+      onEditClick: this.#editClickHandler,
+      onFavoriteClick: this.#favoriteClickHandler,
     });
 
     this.#pointEditComponent = new PointEditView({
       point: this.#point,
       destinations: this.#destinations,
       offersByType: this.#offersByType,
-      onFormSubmit: this.#handleFormSubmit,
-      onRollUpClick: this.#handleRollUpClick,
-      onDeleteClick: this.#handleDeleteClick,
+      onFormSubmit: this.#formSubmitHandler,
+      onRollUpClick: this.#rollUpClickHandler,
+      onDeleteClick: this.#deleteClickHandler,
     });
 
     if (prevPointComponent === null || prevPointEditComponent === null) {
@@ -89,80 +89,6 @@ export default class PointPresenter {
       this.#replaceFormToCard();
     }
   }
-
-  #replaceCardToForm = () => {
-    replace(this.#pointEditComponent, this.#pointComponent);
-    document.addEventListener('keydown', this.#escKeyDownHandler);
-    this.#mode = Mode.EDITING;
-    if (this.#handleModeChange) {
-      this.#handleModeChange(this);
-    }
-  };
-
-  #replaceFormToCard = () => {
-    if (this.#pointEditComponent && this.#pointEditComponent.element.parentElement) {
-      replace(this.#pointComponent, this.#pointEditComponent);
-    }
-    document.removeEventListener('keydown', this.#escKeyDownHandler);
-    this.#mode = Mode.DEFAULT;
-  };
-
-  #escKeyDownHandler = (evt) => {
-    if (evt.key === 'Escape' || evt.key === 'Esc') {
-      evt.preventDefault();
-      this.#replaceFormToCard();
-    }
-  };
-
-  #handleEditClick = () => {
-    this.#replaceCardToForm();
-  };
-
-  #handleFormSubmit = async (pointFromForm) => {
-    try {
-      await this.#handleDataChange(UserAction.UPDATE_POINT, pointFromForm);
-      this.#replaceFormToCard();
-    } catch (err) {
-      // Оставляем форму открытой при ошибке
-    }
-  };
-
-  #handleDeleteClick = async () => {
-    try {
-      await this.#handleDataChange(UserAction.DELETE_POINT, this.#point);
-    } catch (err) {
-      // Обработка ошибки удаления
-    }
-  };
-
-  #handleRollUpClick = () => {
-    this.#replaceFormToCard();
-  };
-
-  #handleFavoriteClick = async () => {
-    if (this._isFavoriteUpdating) {
-      return;
-    }
-    this._isFavoriteUpdating = true;
-
-    const originalIsFavorite = this.#point.isFavorite;
-
-    try {
-      await this.#handleDataChange(
-        UserAction.UPDATE_POINT,
-        {...this.#point, isFavorite: !this.#point.isFavorite}
-      );
-    } catch (err) {
-      if (this.#pointComponent && typeof this.#pointComponent.updateElement === 'function') {
-        this.#pointComponent.updateElement({
-          isFavorite: originalIsFavorite,
-          isFavoriteProcessing: false
-        });
-      }
-    } finally {
-      this._isFavoriteUpdating = false;
-    }
-  };
 
   setSaving() {
     if (this.#mode === Mode.EDITING && this.#pointEditComponent) {
@@ -201,4 +127,87 @@ export default class PointPresenter {
       }
     }
   }
+
+  #replaceCardToForm = () => {
+    replace(this.#pointEditComponent, this.#pointComponent);
+    document.addEventListener('keydown', this.#escKeyDownHandler);
+    this.#mode = Mode.EDITING;
+    if (this.#onModeChangeCallback) {
+      this.#onModeChangeCallback(this);
+    }
+  };
+
+  #replaceFormToCard = () => {
+    if (this.#pointEditComponent) {
+      this.#pointEditComponent.reset(this.#point);
+    }
+
+    if (this.#pointEditComponent && this.#pointEditComponent.element.parentElement) {
+      replace(this.#pointComponent, this.#pointEditComponent);
+    }
+    document.removeEventListener('keydown', this.#escKeyDownHandler);
+    this.#mode = Mode.DEFAULT;
+  };
+
+  #escKeyDownHandler = (evt) => {
+    if (evt.key === 'Escape' || evt.key === 'Esc') {
+      evt.preventDefault();
+      this.#replaceFormToCard();
+    }
+  };
+
+  #editClickHandler = () => {
+    this.#replaceCardToForm();
+  };
+
+  #formSubmitHandler = async (pointFromForm) => {
+    try {
+      await this.#onDataChangeCallback(UserAction.UPDATE_POINT, pointFromForm);
+      this.#replaceFormToCard();
+    } catch (err) {
+      // Оставляем форму открытой при ошибке
+    }
+  };
+
+  #deleteClickHandler = async () => {
+    try {
+      await this.#onDataChangeCallback(UserAction.DELETE_POINT, this.#point);
+    } catch (err) {
+      // Обработка ошибки удаления, форма остается открытой.
+    }
+  };
+
+  #rollUpClickHandler = () => {
+    this.#replaceFormToCard();
+  };
+
+  #favoriteClickHandler = async () => {
+    if (this._isFavoriteUpdating) {
+      return;
+    }
+    this._isFavoriteUpdating = true;
+
+    const originalIsFavorite = this.#point.isFavorite;
+
+    if (this.#pointComponent && typeof this.#pointComponent.updateElement === 'function') {
+      this.#pointComponent.updateElement({ isFavoriteProcessing: true });
+    }
+
+    try {
+      await this.#onDataChangeCallback(
+        UserAction.UPDATE_POINT,
+        {...this.#point, isFavorite: !this.#point.isFavorite}
+      );
+    } catch (err) {
+      if (this.#pointComponent && typeof this.#pointComponent.updateElement === 'function') {
+        this.#pointComponent.updateElement({
+          isFavorite: originalIsFavorite,
+          isFavoriteProcessing: false
+        });
+        this.#pointComponent.shake();
+      }
+    } finally {
+      this._isFavoriteUpdating = false;
+    }
+  };
 }

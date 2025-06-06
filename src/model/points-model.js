@@ -120,9 +120,5 @@ export default class PointsModel extends Observable {
     this._notify(UpdateType.MAJOR, pointToDelete);
   }
 
-  setPoints(points) {
-    this.#points = [...points];
-    this._notify(UpdateType.MAJOR, points);
-  }
 }
 
