@@ -18,17 +18,17 @@ export default class PointPresenter {
   #pointComponent = null;
   #pointEditComponent = null;
   #mode = Mode.DEFAULT;
-  #handleDataChange = null;
-  #handleModeChange = null;
+  #onDataChangeCallback = null;
+  #onModeChangeCallback = null;
 
   _isFavoriteUpdating = false;
 
-  constructor({pointListContainer, destinations, offersByType, onDataChange, onModeChange}) {
+  constructor({pointListContainer, destinations, offersByType, onDataChangeCallback, onModeChangeCallback}) {
     this.#pointListContainer = pointListContainer;
     this.#destinations = destinations;
     this.#offersByType = offersByType;
-    this.#handleDataChange = onDataChange;
-    this.#handleModeChange = onModeChange;
+    this.#onDataChangeCallback = onDataChangeCallback;
+    this.#onModeChangeCallback = onModeChangeCallback;
   }
 
   init(point) {
@@ -48,7 +48,7 @@ export default class PointPresenter {
         destination: pointDestinationObject,
         selectedOffers: selectedPointOfferObjects,
       },
-      onEditClick: this.#handleEditClick,
+      onEditClick: this.#editClickHandler,
       onFavoriteClick: this.#handleFavoriteClick,
     });
 
@@ -56,9 +56,9 @@ export default class PointPresenter {
       point: this.#point,
       destinations: this.#destinations,
       offersByType: this.#offersByType,
-      onFormSubmit: this.#handleFormSubmit,
-      onRollUpClick: this.#handleRollUpClick,
-      onDeleteClick: this.#handleDeleteClick,
+      onFormSubmit: this.#formSubmitHandler,
+      onRollUpClick: this.#rollUpClickHandler,
+      onDeleteClick: this.#deleteClickHandler,
     });
 
     if (prevPointComponent === null || prevPointEditComponent === null) {
@@ -94,8 +94,8 @@ export default class PointPresenter {
     replace(this.#pointEditComponent, this.#pointComponent);
     document.addEventListener('keydown', this.#escKeyDownHandler);
     this.#mode = Mode.EDITING;
-    if (this.#handleModeChange) {
-      this.#handleModeChange(this);
+    if (this.#onModeChangeCallback) {
+      this.#onModeChangeCallback(this);
     }
   };
 
@@ -118,28 +118,28 @@ export default class PointPresenter {
     }
   };
 
-  #handleEditClick = () => {
+  #editClickHandler = () => {
     this.#replaceCardToForm();
   };
 
-  #handleFormSubmit = async (pointFromForm) => {
+  #formSubmitHandler = async (pointFromForm) => {
     try {
-      await this.#handleDataChange(UserAction.UPDATE_POINT, pointFromForm);
+      await this.#onDataChangeCallback(UserAction.UPDATE_POINT, pointFromForm);
       this.#replaceFormToCard();
     } catch (err) {
       // Оставляем форму открытой при ошибке
     }
   };
 
-  #handleDeleteClick = async () => {
+  #deleteClickHandler = async () => {
     try {
-      await this.#handleDataChange(UserAction.DELETE_POINT, this.#point);
+      await this.#onDataChangeCallback(UserAction.DELETE_POINT, this.#point);
     } catch (err) {
       // Обработка ошибки удаления
     }
   };
 
-  #handleRollUpClick = () => {
+  #rollUpClickHandler = () => {
     this.#replaceFormToCard();
   };
 
@@ -156,7 +156,7 @@ export default class PointPresenter {
     }
 
     try {
-      await this.#handleDataChange(
+      await this.#onDataChangeCallback(
         UserAction.UPDATE_POINT,
         {...this.#point, isFavorite: !this.#point.isFavorite}
       );

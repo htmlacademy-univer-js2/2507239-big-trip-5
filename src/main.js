@@ -14,9 +14,9 @@ const generateRandomString = (length = 12) => {
 const AUTHORIZATION = `Basic ${generateRandomString()}`;
 const END_POINT = 'https://24.objects.htmlacademy.pro/big-trip';
 
-const siteMainElement = document.querySelector('.trip-events');
-const siteHeaderElement = document.querySelector('.trip-controls__filters');
-const siteTripMainElement = document.querySelector('.trip-main');
+const siteMain = document.querySelector('.trip-events');
+const siteHeader = document.querySelector('.trip-controls__filters');
+const siteTripMain = document.querySelector('.trip-main');
 
 const TimeLimit = {
   LOWER_LIMIT: 350,
@@ -33,20 +33,20 @@ const pointsModel = new PointsModel({apiService: tripApiService});
 const filtersModel = new FiltersModel();
 
 const boardPresenter = new BoardPresenter({
-  boardContainer: siteMainElement,
+  boardContainer: siteMain,
   pointsModel: pointsModel,
   filtersModel: filtersModel,
   uiBlocker: uiBlocker,
 });
 
 const filterPresenter = new FilterPresenter({
-  filterContainer: siteHeaderElement,
+  filterContainer: siteHeader,
   pointsModel: pointsModel,
   filtersModel: filtersModel,
 });
 
 const tripInfoPresenter = new TripInfoPresenter({
-  tripMainContainer: siteTripMainElement,
+  tripMainContainer: siteTripMain,
   pointsModel: pointsModel
 });
 

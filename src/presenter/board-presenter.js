@@ -29,8 +29,8 @@ export default class BoardPresenter {
     this.#filtersModel = filtersModel;
     this.#uiBlocker = uiBlocker;
 
-    this.#pointsModel.addObserver(this.#handleModelEvent);
-    this.#filtersModel.addObserver(this.#handleModelEvent);
+    this.#pointsModel.addObserver(this.#modelEventHandler);
+    this.#filtersModel.addObserver(this.#modelEventHandler);
   }
 
   get points() {
@@ -76,9 +76,9 @@ export default class BoardPresenter {
       point: BLANK_POINT,
       destinations: this.destinations,
       offersByType: this.offersByType,
-      onFormSubmit: this.#handleNewPointFormSubmit,
-      onRollUpClick: this.#handleNewPointFormClose,
-      onDeleteClick: this.#handleNewPointFormClose,
+      onFormSubmit: this.#newPointFormSubmitHandler,
+      onRollUpClick: this.#newPointFormCloseHandler,
+      onDeleteClick: this.#newPointFormCloseHandler,
     });
 
     const targetContainer = this.#tripEventsList || this.#boardContainer;
@@ -92,138 +92,21 @@ export default class BoardPresenter {
     }
   }
 
-  #handleNewPointFormSubmit = async (pointData) => {
-    this.#newPointFormComponent.updateElement({ isDisabled: true, isSaving: true, isShake: false });
-    try {
-      await this.#handleViewAction(UserAction.ADD_POINT, pointData);
-    } catch (err) {
-      if (this.#newPointFormComponent && this.#newPointFormComponent.element && document.body.contains(this.#newPointFormComponent.element)) {
-        this.#newPointFormComponent.shake(() => {
-          if (this.#newPointFormComponent && this.#newPointFormComponent.element && document.body.contains(this.#newPointFormComponent.element)) {
-            this.#newPointFormComponent.updateElement({ isDisabled: false, isSaving: false });
-          }
-        });
-      }
-    }
-  };
-
-  #handleNewPointFormClose = () => {
-    if (!this.#newPointFormComponent) {
-      return;
-    }
-    this.#isCreatingNewPoint = false;
-    remove(this.#newPointFormComponent);
-    this.#newPointFormComponent = null;
-    document.removeEventListener('keydown', this.#escKeyDownHandlerForNewPoint);
-
-    const newEventButton = document.querySelector('.trip-main__event-add-btn');
-    if (newEventButton) {
-      newEventButton.disabled = false;
-    }
-
-    if (this.points.length === 0 && !this.#emptyListComponent) {
-      this.#clearPointsList();
-      if(this.#tripEventsList) {
-        remove(this.#tripEventsList);
-        this.#tripEventsList = null;
-      }
-      this.#renderEmptyList();
-    }
-  };
-
-  #escKeyDownHandlerForNewPoint = (evt) => {
-    if (evt.key === 'Escape' || evt.key === 'Esc') {
-      evt.preventDefault();
-      this.#handleNewPointFormClose();
-    }
-  };
-
-  #handleViewAction = async (actionType, update) => {
-    this.#uiBlocker.block();
-
-    try {
-      switch (actionType) {
-        case UserAction.UPDATE_POINT:
-          this.#pointPresenters.get(update.id)?.setSaving();
-          try {
-            await this.#pointsModel.updatePoint(update);
-          } catch (errInternal) {
-            this.#pointPresenters.get(update.id)?.setAborting();
-            throw errInternal;
-          }
-          break;
-        case UserAction.ADD_POINT:
-          this.#newPointFormComponent?.updateElement({ isDisabled: true, isSaving: true, isShake: false });
-          try {
-            await this.#pointsModel.addPoint(update);
-          } catch (errInternal) {
-            this.#newPointFormComponent?.shake(() => {
-              this.#newPointFormComponent.updateElement({ isDisabled: false, isSaving: false });
-            });
-            throw errInternal;
-          }
-          break;
-        case UserAction.DELETE_POINT:
-          this.#pointPresenters.get(update.id)?.setDeleting();
-          try {
-            await this.#pointsModel.deletePoint(update);
-          } catch (errInternal) {
-            this.#pointPresenters.get(update.id)?.setAborting();
-            throw errInternal;
-          }
-          break;
-      }
-    } finally {
-      this.#uiBlocker.unblock();
-    }
-  };
-
-  #handleModelEvent = (updateType, data) => {
-    switch (updateType) {
-      case UpdateType.PATCH:
-        this.#pointPresenters.get(data.id).init(data);
-        break;
-      case UpdateType.MINOR:
-        this.#clearBoard();
-        this.#renderBoard();
-        break;
-      case UpdateType.MAJOR:
-        this.#clearBoard({resetSortType: true});
-        this.#renderBoard();
-        break;
-      case UpdateType.INIT:
-        this.#isLoading = false;
-        remove(this.#loadingComponent);
-        this.#loadingComponent = null;
-        this.#renderBoard();
-        break;
-    }
-  };
-
-  #handleSortTypeChange = (sortType) => {
-    if (this.#currentSortType === sortType) {
-      return;
-    }
-    this.#currentSortType = sortType;
-    this.#clearBoard({resetSortType: false});
-    this.#renderBoard();
-  };
-
-  #handlePointModeChange = (activePresenter) => {
-    if (this.#newPointFormComponent) {
-      this.#handleNewPointFormClose();
-    }
-
-    this.#pointPresenters.forEach((presenter) => {
-      if (presenter !== activePresenter) {
-        presenter.resetView();
-      }
+  #renderPoint(point) {
+    const pointPresenter = new PointPresenter({
+      pointListContainer: this.#tripEventsList,
+      destinations: this.destinations,
+      offersByType: this.offersByType,
+      onDataChange: this.#viewActionHandler,
+      onModeChange: this.#pointModeChangeHandler,
     });
-  };
+    pointPresenter.init(point);
+    this.#pointPresenters.set(point.id, pointPresenter);
+  }
 
   #clearBoard({resetSortType = false} = {}) {
     if (this.#newPointFormComponent) {
-      this.#handleNewPointFormClose();
+      this.#newPointFormCloseHandler();
     }
 
     this.#clearPointsList();
@@ -254,7 +137,7 @@ export default class BoardPresenter {
   #renderSort() {
     this.#sortComponent = new SortView({
       currentSortType: this.#currentSortType,
-      onSortTypeChange: this.#handleSortTypeChange
+      onSortTypeChange: this.#sortTypeChangeHandler
     });
     render(this.#sortComponent, this.#boardContainer);
   }
@@ -328,15 +211,132 @@ export default class BoardPresenter {
     this.#renderPoints();
   }
 
-  #renderPoint(point) {
-    const pointPresenter = new PointPresenter({
-      pointListContainer: this.#tripEventsList,
-      destinations: this.destinations,
-      offersByType: this.offersByType,
-      onDataChange: this.#handleViewAction,
-      onModeChange: this.#handlePointModeChange,
+  #newPointFormSubmitHandler = async (pointData) => {
+    this.#newPointFormComponent.updateElement({ isDisabled: true, isSaving: true, isShake: false });
+    try {
+      await this.#viewActionHandler(UserAction.ADD_POINT, pointData);
+    } catch (err) {
+      if (this.#newPointFormComponent && this.#newPointFormComponent.element && document.body.contains(this.#newPointFormComponent.element)) {
+        this.#newPointFormComponent.shake(() => {
+          if (this.#newPointFormComponent && this.#newPointFormComponent.element && document.body.contains(this.#newPointFormComponent.element)) {
+            this.#newPointFormComponent.updateElement({ isDisabled: false, isSaving: false });
+          }
+        });
+      }
+    }
+  };
+
+  #newPointFormCloseHandler = () => {
+    if (!this.#newPointFormComponent) {
+      return;
+    }
+    this.#isCreatingNewPoint = false;
+    remove(this.#newPointFormComponent);
+    this.#newPointFormComponent = null;
+    document.removeEventListener('keydown', this.#escKeyDownHandlerForNewPoint);
+
+    const newEventButton = document.querySelector('.trip-main__event-add-btn');
+    if (newEventButton) {
+      newEventButton.disabled = false;
+    }
+
+    if (this.points.length === 0 && !this.#emptyListComponent) {
+      this.#clearPointsList();
+      if(this.#tripEventsList) {
+        remove(this.#tripEventsList);
+        this.#tripEventsList = null;
+      }
+      this.#renderEmptyList();
+    }
+  };
+
+  #escKeyDownHandlerForNewPoint = (evt) => {
+    if (evt.key === 'Escape' || evt.key === 'Esc') {
+      evt.preventDefault();
+      this.#newPointFormCloseHandler();
+    }
+  };
+
+  #viewActionHandler = async (actionType, update) => {
+    this.#uiBlocker.block();
+
+    try {
+      switch (actionType) {
+        case UserAction.UPDATE_POINT:
+          this.#pointPresenters.get(update.id)?.setSaving();
+          try {
+            await this.#pointsModel.updatePoint(update);
+          } catch (errInternal) {
+            this.#pointPresenters.get(update.id)?.setAborting();
+            throw errInternal;
+          }
+          break;
+        case UserAction.ADD_POINT:
+          this.#newPointFormComponent?.updateElement({ isDisabled: true, isSaving: true, isShake: false });
+          try {
+            await this.#pointsModel.addPoint(update);
+          } catch (errInternal) {
+            this.#newPointFormComponent?.shake(() => {
+              this.#newPointFormComponent.updateElement({ isDisabled: false, isSaving: false });
+            });
+            throw errInternal;
+          }
+          break;
+        case UserAction.DELETE_POINT:
+          this.#pointPresenters.get(update.id)?.setDeleting();
+          try {
+            await this.#pointsModel.deletePoint(update);
+          } catch (errInternal) {
+            this.#pointPresenters.get(update.id)?.setAborting();
+            throw errInternal;
+          }
+          break;
+      }
+    } finally {
+      this.#uiBlocker.unblock();
+    }
+  };
+
+  #modelEventHandler = (updateType, data) => {
+    switch (updateType) {
+      case UpdateType.PATCH:
+        this.#pointPresenters.get(data.id).init(data);
+        break;
+      case UpdateType.MINOR:
+        this.#clearBoard();
+        this.#renderBoard();
+        break;
+      case UpdateType.MAJOR:
+        this.#clearBoard({resetSortType: true});
+        this.#renderBoard();
+        break;
+      case UpdateType.INIT:
+        this.#isLoading = false;
+        remove(this.#loadingComponent);
+        this.#loadingComponent = null;
+        this.#renderBoard();
+        break;
+    }
+  };
+
+  #sortTypeChangeHandler = (sortType) => {
+    if (this.#currentSortType === sortType) {
+      return;
+    }
+    this.#currentSortType = sortType;
+    this.#clearBoard({resetSortType: false});
+    this.#renderBoard();
+  };
+
+  #pointModeChangeHandler = (activePresenter) => {
+    if (this.#newPointFormComponent) {
+      this.#newPointFormCloseHandler();
+    }
+
+    this.#pointPresenters.forEach((presenter) => {
+      if (presenter !== activePresenter) {
+        presenter.resetView();
+      }
     });
-    pointPresenter.init(point);
-    this.#pointPresenters.set(point.id, pointPresenter);
-  }
+  };
 }
