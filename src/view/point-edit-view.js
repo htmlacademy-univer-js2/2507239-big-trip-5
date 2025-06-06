@@ -225,7 +225,7 @@ export default class PointEditView extends AbstractStatefulView {
       this.element.querySelector('#event-start-time-1'),
       {
         ...commonConfig,
-        defaultDate: this._state.dateFrom || 'today',
+        defaultDate: this._state.dateFrom,
         onClose: ([userDate]) => {
           this.updateElement({ dateFrom: userDate ? userDate.toISOString() : null });
           if (this.#datepickerTo) {
@@ -239,7 +239,7 @@ export default class PointEditView extends AbstractStatefulView {
       this.element.querySelector('#event-end-time-1'),
       {
         ...commonConfig,
-        defaultDate: this._state.dateTo || 'today',
+        defaultDate: this._state.dateTo,
         minDate: this._state.dateFrom || null,
         onClose: ([userDate]) => {
           this.updateElement({ dateTo: userDate ? userDate.toISOString() : null });
