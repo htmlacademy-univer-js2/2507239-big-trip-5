@@ -27,16 +27,13 @@ export default class TripInfoPresenter {
 
   init() {
     if (this.#pointsModel) {
-      this.#pointsModel.addObserver(this.#handleModelEvent);
+      this.#pointsModel.addObserver(this.#modelEventHandler);
       this.#renderTripInfo();
     }
   }
 
   #calculateTotalCost(points, offersData) {
     let totalCost = 0;
-    if (!points || points.length === 0 || !offersData) {
-      return 0;
-    }
     const offersByType = {};
     offersData.forEach((offerType) => {
       offersByType[offerType.type] = offerType.offers;
@@ -131,7 +128,7 @@ export default class TripInfoPresenter {
     }
   }
 
-  #handleModelEvent = () => {
+  #modelEventHandler = () => {
     if (!this.#pointsModel) {
       return;
     }

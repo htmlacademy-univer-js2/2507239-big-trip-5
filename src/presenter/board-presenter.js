@@ -8,6 +8,8 @@ import {UpdateType, UserAction, FilterType, BLANK_POINT} from '../const.js';
 import LoadingView from '../view/loading-view.js';
 import PointEditView from '../view/point-edit-view.js';
 
+const ERROR_LOAD_MESSAGE = 'Failed to load latest route information';
+
 export default class BoardPresenter {
   #boardContainer = null;
   #pointsModel = null;
@@ -143,7 +145,6 @@ export default class BoardPresenter {
   }
 
   #renderEmptyList() {
-    const ERROR_LOAD_MESSAGE = 'Failed to load latest route information';
     let messageToShow;
 
     if (this.#pointsModel.isLoadFailed) {

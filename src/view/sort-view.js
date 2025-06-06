@@ -38,13 +38,13 @@ const createSortTemplate = (currentSortType) => (
 );
 
 export default class SortView extends AbstractView {
-  #handleSortTypeChange = null;
+  #onSortTypeChangeCallback = null;
   #currentSortType = null;
 
   constructor({currentSortType = SortType.DAY, onSortTypeChange}) {
     super();
     this.#currentSortType = currentSortType;
-    this.#handleSortTypeChange = onSortTypeChange;
+    this.#onSortTypeChangeCallback = onSortTypeChange;
     this.element.addEventListener('click', this.#sortTypeChangeHandler);
   }
 
@@ -73,6 +73,6 @@ export default class SortView extends AbstractView {
     }
 
     evt.preventDefault();
-    this.#handleSortTypeChange(sortType);
+    this.#onSortTypeChangeCallback(sortType);
   };
 }

@@ -5,11 +5,7 @@ import FiltersModel from './model/filters-model.js';
 import TripApiService from './trip-api-service.js';
 import UiBlocker from './framework/ui-blocker/ui-blocker.js';
 import TripInfoPresenter from './presenter/trip-info-presenter.js';
-
-const generateRandomString = (length = 12) => {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  return Array.from({ length }, () => characters.charAt(Math.floor(Math.random() * characters.length))).join('');
-};
+import { generateRandomString } from './utils.js';
 
 const AUTHORIZATION = `Basic ${generateRandomString()}`;
 const END_POINT = 'https://24.objects.htmlacademy.pro/big-trip';

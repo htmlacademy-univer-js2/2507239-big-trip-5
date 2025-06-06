@@ -51,9 +51,6 @@ const formatTimeToHourMinute = (date) => {
 };
 
 const formatDuration = (dateFrom, dateTo) => {
-  if (!dateFrom || !dateTo) {
-    return '';
-  }
   const start = dayjs(dateFrom);
   const end = dayjs(dateTo);
   const diff = end.diff(start);
@@ -109,6 +106,11 @@ export const isValidImageUrl = (url) => {
     return false;
   }
   return url.startsWith('http://') || url.startsWith('https://') || (!url.startsWith('//') && !url.includes(':'));
+};
+
+export const generateRandomString = (length = 12) => {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  return Array.from({ length }, () => characters.charAt(Math.floor(Math.random() * characters.length))).join('');
 };
 
 export {

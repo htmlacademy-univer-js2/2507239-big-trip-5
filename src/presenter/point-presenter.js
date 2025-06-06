@@ -173,7 +173,7 @@ export default class PointPresenter {
     try {
       await this.#onDataChangeCallback(UserAction.DELETE_POINT, this.#point);
     } catch (err) {
-      // Обработка ошибки удаления
+      // Обработка ошибки удаления, форма остается открытой.
     }
   };
 
