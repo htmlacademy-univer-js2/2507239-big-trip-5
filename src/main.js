@@ -1,37 +1,63 @@
 import BoardPresenter from './presenter/board-presenter.js';
-import {render} from './framework/render.js';
-import FilterView from './view/filter-view.js';
-import {generateMockRoutePoints, DESTINATIONS, OFFERS_BY_TYPE} from './mock/point.js';
+import FilterPresenter from './presenter/filter-presenter.js';
+import PointsModel from './model/points-model.js';
+import FiltersModel from './model/filters-model.js';
+import TripApiService from './trip-api-service.js';
+import UiBlocker from './framework/ui-blocker/ui-blocker.js';
+import TripInfoPresenter from './presenter/trip-info-presenter.js';
+import { generateRandomString } from './utils.js';
 
-const siteMainElement = document.querySelector('.trip-events');
-const siteHeaderElement = document.querySelector('.trip-controls__filters');
+const AUTHORIZATION = `Basic ${generateRandomString()}`;
+const END_POINT = 'https://24.objects.htmlacademy.pro/big-trip';
 
-const mockRoutePoints = generateMockRoutePoints(5);
+const siteMain = document.querySelector('.trip-events');
+const siteHeader = document.querySelector('.trip-controls__filters');
+const siteTripMain = document.querySelector('.trip-main');
 
-const adaptedMockRoutePoints = mockRoutePoints.map((point) => {
-  const destination = DESTINATIONS.find((dest) => dest.id === point.destination);
-  const pointOffers = OFFERS_BY_TYPE[point.type] || [];
-  const selectedOffers = pointOffers.filter((offer) => point.offers.includes(offer.id));
-
-  return {
-    ...point,
-    destination,
-    selectedOffers
-  };
-});
-
-const filters = {
-  everything: adaptedMockRoutePoints.length > 0,
-  future: true,
-  present: true,
-  past: true
+const TimeLimit = {
+  LOWER_LIMIT: 350,
+  UPPER_LIMIT: 1000,
 };
 
-const boardPresenter = new BoardPresenter({
-  boardContainer: siteMainElement
+const tripApiService = new TripApiService(END_POINT, AUTHORIZATION);
+const uiBlocker = new UiBlocker({
+  lowerLimit: TimeLimit.LOWER_LIMIT,
+  upperLimit: TimeLimit.UPPER_LIMIT
 });
 
-render(new FilterView(filters), siteHeaderElement);
+const pointsModel = new PointsModel({apiService: tripApiService});
+const filtersModel = new FiltersModel();
 
+const boardPresenter = new BoardPresenter({
+  boardContainer: siteMain,
+  pointsModel: pointsModel,
+  filtersModel: filtersModel,
+  uiBlocker: uiBlocker,
+});
 
-boardPresenter.init(adaptedMockRoutePoints, DESTINATIONS, OFFERS_BY_TYPE);
+const filterPresenter = new FilterPresenter({
+  filterContainer: siteHeader,
+  pointsModel: pointsModel,
+  filtersModel: filtersModel,
+});
+
+const tripInfoPresenter = new TripInfoPresenter({
+  tripMainContainer: siteTripMain,
+  pointsModel: pointsModel
+});
+
+const newEventButton = document.querySelector('.trip-main__event-add-btn');
+
+filterPresenter.init();
+tripInfoPresenter.init();
+boardPresenter.init();
+pointsModel.init()
+  .finally(() => {
+    if (newEventButton) {
+      newEventButton.disabled = false;
+      newEventButton.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        boardPresenter.createPoint();
+      });
+    }
+  });
