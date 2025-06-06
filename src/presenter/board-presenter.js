@@ -97,8 +97,8 @@ export default class BoardPresenter {
       pointListContainer: this.#tripEventsList,
       destinations: this.destinations,
       offersByType: this.offersByType,
-      onDataChange: this.#viewActionHandler,
-      onModeChange: this.#pointModeChangeHandler,
+      onDataChangeCallback: this.#viewActionHandler,
+      onModeChangeCallback: this.#pointModeChangeHandler,
     });
     pointPresenter.init(point);
     this.#pointPresenters.set(point.id, pointPresenter);
@@ -300,7 +300,9 @@ export default class BoardPresenter {
   #modelEventHandler = (updateType, data) => {
     switch (updateType) {
       case UpdateType.PATCH:
-        this.#pointPresenters.get(data.id).init(data);
+        if (this.#pointPresenters.has(data.id)) {
+          this.#pointPresenters.get(data.id).init(data);
+        }
         break;
       case UpdateType.MINOR:
         this.#clearBoard();

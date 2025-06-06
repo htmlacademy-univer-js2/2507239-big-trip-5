@@ -49,7 +49,7 @@ export default class PointPresenter {
         selectedOffers: selectedPointOfferObjects,
       },
       onEditClick: this.#editClickHandler,
-      onFavoriteClick: this.#handleFavoriteClick,
+      onFavoriteClick: this.#favoriteClickHandler,
     });
 
     this.#pointEditComponent = new PointEditView({
@@ -87,6 +87,44 @@ export default class PointPresenter {
   resetView() {
     if (this.#mode !== Mode.DEFAULT) {
       this.#replaceFormToCard();
+    }
+  }
+
+  setSaving() {
+    if (this.#mode === Mode.EDITING && this.#pointEditComponent) {
+      this.#pointEditComponent.updateElement({
+        isDisabled: true,
+        isSaving: true,
+        isShake: false,
+      });
+    }
+  }
+
+  setDeleting() {
+    if (this.#mode === Mode.EDITING && this.#pointEditComponent) {
+      this.#pointEditComponent.updateElement({
+        isDisabled: true,
+        isDeleting: true,
+        isShake: false,
+      });
+    }
+  }
+
+  setAborting() {
+    if (this.#mode === Mode.EDITING && this.#pointEditComponent) {
+      const resetFormState = () => {
+        if (this.#pointEditComponent && this.#pointEditComponent.element && document.body.contains(this.#pointEditComponent.element)) {
+          this.#pointEditComponent.updateElement({
+            isDisabled: false,
+            isSaving: false,
+            isDeleting: false,
+            isShake: false,
+          });
+        }
+      };
+      if (this.#pointEditComponent.element && document.body.contains(this.#pointEditComponent.element)) {
+        this.#pointEditComponent.shake(resetFormState);
+      }
     }
   }
 
@@ -143,7 +181,7 @@ export default class PointPresenter {
     this.#replaceFormToCard();
   };
 
-  #handleFavoriteClick = async () => {
+  #favoriteClickHandler = async () => {
     if (this._isFavoriteUpdating) {
       return;
     }
@@ -172,42 +210,4 @@ export default class PointPresenter {
       this._isFavoriteUpdating = false;
     }
   };
-
-  setSaving() {
-    if (this.#mode === Mode.EDITING && this.#pointEditComponent) {
-      this.#pointEditComponent.updateElement({
-        isDisabled: true,
-        isSaving: true,
-        isShake: false,
-      });
-    }
-  }
-
-  setDeleting() {
-    if (this.#mode === Mode.EDITING && this.#pointEditComponent) {
-      this.#pointEditComponent.updateElement({
-        isDisabled: true,
-        isDeleting: true,
-        isShake: false,
-      });
-    }
-  }
-
-  setAborting() {
-    if (this.#mode === Mode.EDITING && this.#pointEditComponent) {
-      const resetFormState = () => {
-        if (this.#pointEditComponent && this.#pointEditComponent.element && document.body.contains(this.#pointEditComponent.element)) {
-          this.#pointEditComponent.updateElement({
-            isDisabled: false,
-            isSaving: false,
-            isDeleting: false,
-            isShake: false,
-          });
-        }
-      };
-      if (this.#pointEditComponent.element && document.body.contains(this.#pointEditComponent.element)) {
-        this.#pointEditComponent.shake(resetFormState);
-      }
-    }
-  }
 }

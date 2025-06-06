@@ -52,14 +52,14 @@ const createPointTemplate = (point) => {
 };
 
 export default class PointView extends AbstractStatefulView {
-  #handleEditClick = null;
-  #handleFavoriteClick = null;
+  #onEditClickCallback = null;
+  #onFavoriteClickCallback = null;
 
   constructor({point, onEditClick, onFavoriteClick}) {
     super();
     this._state = PointView.parsePointToState(point);
-    this.#handleEditClick = onEditClick;
-    this.#handleFavoriteClick = onFavoriteClick;
+    this.#onEditClickCallback = onEditClick;
+    this.#onFavoriteClickCallback = onFavoriteClick;
 
     this.#setHandlers();
   }
@@ -72,27 +72,32 @@ export default class PointView extends AbstractStatefulView {
     this.#setHandlers();
   }
 
-  #setHandlers() {
-    this.element.querySelector('.event__rollup-btn')
-      .addEventListener('click', this.#editClickHandler);
-    this.element.querySelector('.event__favorite-btn')
-      .addEventListener('click', this.#favoriteClickHandler);
-  }
-
-  #editClickHandler = (evt) => {
+  #editButtonClickHandler = (evt) => {
     evt.preventDefault();
-    this.#handleEditClick();
+    if (this.#onEditClickCallback) {
+      this.#onEditClickCallback();
+    }
   };
 
-  #favoriteClickHandler = (evt) => {
+  #favoriteButtonClickHandler = (evt) => {
     evt.preventDefault();
 
     if (this._state.isFavoriteProcessing) {
       return;
     }
     this.updateElement({ isFavoriteProcessing: true });
-    this.#handleFavoriteClick();
+
+    if (this.#onFavoriteClickCallback) {
+      this.#onFavoriteClickCallback();
+    }
   };
+
+  #setHandlers() {
+    this.element.querySelector('.event__rollup-btn')
+      .addEventListener('click', this.#editButtonClickHandler);
+    this.element.querySelector('.event__favorite-btn')
+      .addEventListener('click', this.#favoriteButtonClickHandler);
+  }
 
   static parsePointToState(point) {
     return {
